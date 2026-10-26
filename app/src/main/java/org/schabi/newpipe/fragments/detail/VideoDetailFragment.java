@@ -1014,7 +1014,7 @@ public final class VideoDetailFragment
                         // no translation at all when viewPagerVisibleHeight > tabLayout.height * 3
                         binding.tabLayout.setTranslationY(
                                 Math.max(0, tabLayoutHeight * 3 - viewPagerVisibleHeight));
-                        binding.tabLayout.setVisibility(View.VISIBLE);
+                        binding.tabLayout.setVisibility(View.GONE);
                     } else {
                         // view pager is not visible enough
                         binding.tabLayout.setVisibility(View.GONE);

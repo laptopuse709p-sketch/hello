@@ -65,6 +65,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:background="@drawable/drawer_header_bottom_background"
+            android:visibility="gone"
             android:gravity="center"
             android:orientation="horizontal"
             android:paddingLeft="6dp"
@@ -112,6 +113,7 @@
 
     <Button
         android:id="@+id/drawer_header_action_button"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="?selectableItemBackground"

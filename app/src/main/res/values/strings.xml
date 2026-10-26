@@ -907,5 +907,5 @@
     <string name="api23_requirement_dialog_blogpost">Blogpost</string>
     <string name="bottom_nav_home">Home</string>
     <string name="bottom_nav_subscriptions">Subscriptions</string>
-    <string name="bottom_nav_library">Library</string>
+    <string name="bottom_nav_library">You</string>
 </resources>
