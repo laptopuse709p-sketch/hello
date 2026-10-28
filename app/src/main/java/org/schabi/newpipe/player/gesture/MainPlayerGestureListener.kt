@@ -170,6 +170,12 @@ class MainPlayerGestureListener(
         distanceX: Float,
         distanceY: Float
     ): Boolean {
+        // Volume and brightness swipe gestures are intentionally disabled.
+        // Volume stays available through the hardware buttons and the in-app settings.
+        @Suppress("ConstantConditionIf")
+        if (true) {
+            return false
+        }
         if (initialEvent == null || !playerUi.isFullscreen) {
             return false
         }

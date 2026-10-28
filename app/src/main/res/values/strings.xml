@@ -908,4 +908,8 @@
     <string name="bottom_nav_home">Home</string>
     <string name="bottom_nav_subscriptions">Subscriptions</string>
     <string name="bottom_nav_library">You</string>
+    <string name="topic_all">All</string>
+    <string name="topic_ai">AI</string>
+    <string name="topic_technology">Technology</string>
+    <string name="topic_phonk">Phonk</string>
 </resources>

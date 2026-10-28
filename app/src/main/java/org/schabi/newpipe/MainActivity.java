@@ -72,6 +72,7 @@ import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.services.peertube.PeertubeInstance;
 import org.schabi.newpipe.fragments.BackPressable;
+import org.schabi.newpipe.fragments.HomeFragment;
 import org.schabi.newpipe.fragments.MainFragment;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.fragments.list.comments.CommentRepliesFragment;
@@ -306,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.bottom_nav_subscriptions) {
                 NavigationHelper.openFeedFragment(getSupportFragmentManager());
             } else if (id == R.id.bottom_nav_library) {
-                NavigationHelper.openBookmarksFragment(getSupportFragmentManager());
+                NavigationHelper.openStatisticFragment(getSupportFragmentManager());
             } else {
                 return false;
             }
@@ -784,7 +785,7 @@ public class MainActivity extends AppCompatActivity {
 
         final Fragment fragment = getSupportFragmentManager()
                 .findFragmentById(R.id.fragment_holder);
-        if (fragment instanceof MainFragment) {
+        if (fragment instanceof MainFragment || fragment instanceof HomeFragment) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             if (toggle != null) {
                 toggle.syncState();
