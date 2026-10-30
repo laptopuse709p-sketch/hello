@@ -35,6 +35,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -105,6 +106,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
+import org.schabi.newpipe.views.ImmersiveDragLayout;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
@@ -149,6 +151,8 @@ public final class VideoDetailFragment
             App.PACKAGE_NAME + ".VideoDetailFragment.ACTION_SHOW_MAIN_PLAYER";
     public static final String ACTION_HIDE_MAIN_PLAYER =
             App.PACKAGE_NAME + ".VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER";
+    public static final String ACTION_COLLAPSE_MAIN_PLAYER =
+            App.PACKAGE_NAME + ".VideoDetailFragment.ACTION_COLLAPSE_MAIN_PLAYER";
     public static final String ACTION_PLAYER_STARTED =
             App.PACKAGE_NAME + ".VideoDetailFragment.ACTION_PLAYER_STARTED";
     public static final String ACTION_VIDEO_FRAGMENT_RESUMED =
@@ -434,6 +438,7 @@ public final class VideoDetailFragment
 
     @Override
     public void onDestroyView() {
+        resetImmersive();
         super.onDestroyView();
         binding = null;
     }
@@ -624,6 +629,7 @@ public final class VideoDetailFragment
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
+        setupImmersive();
 
         binding.detailThumbnailRootLayout.requestFocus();
 
@@ -705,6 +711,12 @@ public final class VideoDetailFragment
     public boolean onBackPressed() {
         if (DEBUG) {
             Log.d(TAG, "onBackPressed() called");
+        }
+
+        // Leave the immersive view first
+        if (immersive) {
+            animateImmersiveTo(0f);
+            return true;
         }
 
         // If we are in fullscreen mode just exit from it via first back press
@@ -986,42 +998,16 @@ public final class VideoDetailFragment
     }
 
     public void updateTabLayoutVisibility() {
-
         if (binding == null) {
             //If binding is null we do not need to and should not do anything with its object(s)
             return;
         }
 
-        if (pageAdapter.getCount() < 2 || binding.viewPager.getVisibility() != View.VISIBLE) {
-            // hide tab layout if there is only one tab or if the view pager is also hidden
-            binding.tabLayout.setVisibility(View.GONE);
-        } else {
-            // call `post()` to be sure `viewPager.getHitRect()`
-            // is up to date and not being currently recomputed
-            binding.tabLayout.post(() -> {
-                final var activity = getActivity();
-                if (activity != null) {
-                    final Rect pagerHitRect = new Rect();
-                    binding.viewPager.getHitRect(pagerHitRect);
-
-                    final int height = DeviceUtils.getWindowHeight(activity.getWindowManager());
-                    final int viewPagerVisibleHeight = height - pagerHitRect.top;
-                    // see TabLayout.DEFAULT_HEIGHT, which is equal to 48dp
-                    final float tabLayoutHeight = TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DIP, 48, getResources().getDisplayMetrics());
-
-                    if (viewPagerVisibleHeight > tabLayoutHeight * 2) {
-                        // no translation at all when viewPagerVisibleHeight > tabLayout.height * 3
-                        binding.tabLayout.setTranslationY(
-                                Math.max(0, tabLayoutHeight * 3 - viewPagerVisibleHeight));
-                        binding.tabLayout.setVisibility(View.GONE);
-                    } else {
-                        // view pager is not visible enough
-                        binding.tabLayout.setVisibility(View.GONE);
-                    }
-                }
-            });
-        }
+        // hide tab layout if there is only one tab or if the view pager is also hidden
+        final boolean show = pageAdapter.getCount() >= 2
+                && binding.viewPager.getVisibility() == View.VISIBLE
+                && !immersive;
+        binding.tabLayout.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     public void scrollToTop() {
@@ -1442,6 +1428,10 @@ public final class VideoDetailFragment
                     case ACTION_HIDE_MAIN_PLAYER:
                         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                         break;
+                    case ACTION_COLLAPSE_MAIN_PLAYER:
+                        // The down arrow shrinks the player into the floating mini player.
+                        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                        break;
                     case ACTION_PLAYER_STARTED:
                         // If the state is not hidden we don't need to show the mini player
                         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HIDDEN) {
@@ -1459,6 +1449,7 @@ public final class VideoDetailFragment
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_SHOW_MAIN_PLAYER);
         intentFilter.addAction(ACTION_HIDE_MAIN_PLAYER);
+        intentFilter.addAction(ACTION_COLLAPSE_MAIN_PLAYER);
         intentFilter.addAction(ACTION_PLAYER_STARTED);
         ContextCompat.registerReceiver(activity, broadcastReceiver, intentFilter,
                 ContextCompat.RECEIVER_EXPORTED);
@@ -1913,6 +1904,7 @@ public final class VideoDetailFragment
 
     @Override
     public void onFullscreenStateChanged(final boolean fullscreen) {
+        resetImmersive();
         setupBrightness();
         if (!isPlayerAndPlayerServiceAvailable()
                 || player.UIs().get(MainPlayerUi.class).isEmpty()
@@ -2280,6 +2272,263 @@ public final class VideoDetailFragment
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+    // Immersive view: drag the watch page down to get a centered video on a blurred background
+    //////////////////////////////////////////////////////////////////////////*/
+
+    private static final float IMMERSIVE_COMMIT_FRACTION = 0.35f;
+    private static final float IMMERSIVE_FLING_VELOCITY = 1200f;
+    private static final long IMMERSIVE_ANIMATION_MS = 240;
+
+    private boolean immersive = false;
+    private boolean immersiveActive = false;
+    private boolean immersiveDragEntering = false;
+    private float immersiveProgress = 0f;
+    private int immersiveBaseHeight = 0;
+    private int immersiveFullHeight = 0;
+    private int savedPagerVisibility = View.VISIBLE;
+    private int savedContentVisibility = View.VISIBLE;
+    private int savedTabVisibility = View.GONE;
+    @Nullable
+    private ValueAnimator immersiveAnimator;
+    @Nullable
+    private VideoFrameBlur frameBlur;
+
+    private void setupImmersive() {
+        final View root = binding.getRoot();
+        if (!(root instanceof ImmersiveDragLayout)) {
+            return; // layouts without the drag layout (large landscape) don't have this view
+        }
+        ((ImmersiveDragLayout) root).setListener(new ImmersiveDragLayout.Listener() {
+            @Override
+            public boolean isImmersive() {
+                return immersive;
+            }
+
+            @Override
+            public boolean canStartEnterDrag(final float rawX, final float rawY) {
+                return canEnterImmersive(rawX, rawY);
+            }
+
+            @Override
+            public void onDragStart(final boolean entering) {
+                immersiveDragEntering = entering;
+                if (immersiveAnimator != null) {
+                    immersiveAnimator.cancel();
+                }
+                if (entering) {
+                    beginImmersive();
+                }
+            }
+
+            @Override
+            public void onDragMove(final float totalDy) {
+                if (!immersiveActive || binding == null) {
+                    return;
+                }
+                final float range = Math.max(1f,
+                        (immersiveFullHeight - immersiveBaseHeight) * 0.6f);
+                final float p = immersiveDragEntering ? totalDy / range : 1f + totalDy / range;
+                applyImmersiveProgress(Math.max(0f, Math.min(1f, p)));
+            }
+
+            @Override
+            public void onDragEnd(final float totalDy, final float velocityY) {
+                if (!immersiveActive || binding == null) {
+                    return;
+                }
+                final boolean goImmersive;
+                if (immersiveDragEntering) {
+                    goImmersive = immersiveProgress > IMMERSIVE_COMMIT_FRACTION
+                            || velocityY > IMMERSIVE_FLING_VELOCITY;
+                } else {
+                    goImmersive = !(immersiveProgress < 1f - IMMERSIVE_COMMIT_FRACTION
+                            || velocityY < -IMMERSIVE_FLING_VELOCITY);
+                }
+                animateImmersiveTo(goImmersive ? 1f : 0f);
+            }
+        });
+    }
+
+    private boolean canEnterImmersive(final float rawX, final float rawY) {
+        if (binding == null || !isPlayerAvailable() || isFullscreen()
+                || bottomSheetState != BottomSheetBehavior.STATE_EXPANDED
+                || !player.videoPlayerSelected()
+                || player.UIs().get(MainPlayerUi.class).isEmpty()) {
+            return false;
+        }
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+        if (metrics.heightPixels <= metrics.widthPixels) {
+            return false;
+        }
+        // Once the page is scrolled down, a downward swipe has to scroll it back up first.
+        if (binding.appBarLayout.getTop() < 0) {
+            return false;
+        }
+        final Rect appBarRect = new Rect();
+        return binding.appBarLayout.getGlobalVisibleRect(appBarRect)
+                && appBarRect.contains((int) rawX, (int) rawY);
+    }
+
+    @Nullable
+    private SurfaceView getPlayerSurface() {
+        if (!isPlayerAvailable()) {
+            return null;
+        }
+        return player.UIs().get(MainPlayerUi.class)
+                .map(ui -> (SurfaceView) ui.getBinding().surfaceView)
+                .orElse(null);
+    }
+
+    private void beginImmersive() {
+        if (binding == null || immersiveActive) {
+            return;
+        }
+        immersiveActive = true;
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+        immersiveBaseHeight = binding.detailThumbnailImageView.getHeight();
+        if (immersiveBaseHeight <= 0) {
+            immersiveBaseHeight = (int) (metrics.widthPixels / (16.0f / 9.0f));
+        }
+        immersiveFullHeight = requireView().getHeight();
+        savedPagerVisibility = binding.viewPager.getVisibility();
+        savedContentVisibility = binding.detailContentRootLayout.getVisibility();
+        savedTabVisibility = binding.tabLayout.getVisibility();
+
+        binding.immersiveBlurBackground.setVisibility(View.VISIBLE);
+        binding.immersiveDimOverlay.setVisibility(View.VISIBLE);
+        setImmersiveBackgrounds(true);
+
+        if (frameBlur == null) {
+            frameBlur = new VideoFrameBlur(binding.immersiveBlurBackground,
+                    this::getPlayerSurface,
+                    () -> binding.detailThumbnailImageView.getDrawable());
+        }
+        frameBlur.start();
+    }
+
+    private void setImmersiveBackgrounds(final boolean on) {
+        binding.detailThumbnailRootLayout.setBackgroundColor(on ? Color.TRANSPARENT : Color.BLACK);
+        if (isPlayerAvailable()) {
+            player.UIs().get(MainPlayerUi.class).ifPresent(ui ->
+                    ui.getBinding().getRoot()
+                            .setBackgroundColor(on ? Color.TRANSPARENT : Color.BLACK));
+        }
+    }
+
+    private void applyImmersiveProgress(final float p) {
+        if (binding == null) {
+            return;
+        }
+        immersiveProgress = p;
+        final int height = Math.round(
+                immersiveBaseHeight + (immersiveFullHeight - immersiveBaseHeight) * p);
+        setHeightThumbnail(height, getResources().getDisplayMetrics());
+
+        final float contentAlpha = 1f - Math.min(1f, p * 1.6f);
+        binding.detailContentRootLayout.setAlpha(contentAlpha);
+        binding.viewPager.setAlpha(contentAlpha);
+        binding.tabLayout.setAlpha(contentAlpha);
+        binding.detailThumbnailImageView.setAlpha(1f - p);
+        binding.immersiveBlurBackground.setAlpha(p);
+        binding.immersiveDimOverlay.setAlpha(p);
+    }
+
+    private void animateImmersiveTo(final float target) {
+        if (binding == null) {
+            return;
+        }
+        if (!immersiveActive) {
+            beginImmersive();
+        }
+        if (immersiveAnimator != null) {
+            immersiveAnimator.cancel();
+        }
+        final ValueAnimator animator = ValueAnimator.ofFloat(immersiveProgress, target);
+        animator.setDuration((long) (IMMERSIVE_ANIMATION_MS
+                * Math.max(0.3f, Math.abs(target - immersiveProgress))));
+        animator.setInterpolator(new DecelerateInterpolator());
+        animator.addUpdateListener(a -> applyImmersiveProgress((float) a.getAnimatedValue()));
+        animator.addListener(new android.animation.AnimatorListenerAdapter() {
+            private boolean cancelled = false;
+
+            @Override
+            public void onAnimationCancel(final android.animation.Animator a) {
+                cancelled = true;
+            }
+
+            @Override
+            public void onAnimationEnd(final android.animation.Animator a) {
+                if (!cancelled) {
+                    finishImmersive(target >= 1f);
+                }
+            }
+        });
+        immersiveAnimator = animator;
+        animator.start();
+    }
+
+    private void finishImmersive(final boolean on) {
+        if (binding == null) {
+            return;
+        }
+        if (on) {
+            immersive = true;
+            applyImmersiveProgress(1f);
+            // Nothing below the video should receive touches while it is covered.
+            binding.viewPager.setVisibility(View.INVISIBLE);
+            binding.detailContentRootLayout.setVisibility(View.INVISIBLE);
+            binding.tabLayout.setVisibility(View.INVISIBLE);
+            if (isPlayerAvailable()) {
+                player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
+                    ui.getBinding().metadataView.setVisibility(View.VISIBLE);
+                    ui.showControlsThenHide();
+                });
+            }
+        } else {
+            immersive = false;
+            immersiveActive = false;
+            applyImmersiveProgress(0f);
+            immersiveProgress = 0f;
+            if (frameBlur != null) {
+                frameBlur.stop();
+            }
+            binding.immersiveBlurBackground.setVisibility(View.GONE);
+            binding.immersiveDimOverlay.setVisibility(View.GONE);
+            binding.viewPager.setVisibility(savedPagerVisibility);
+            binding.detailContentRootLayout.setVisibility(savedContentVisibility);
+            binding.tabLayout.setVisibility(savedTabVisibility);
+            binding.detailContentRootLayout.setAlpha(1f);
+            binding.viewPager.setAlpha(1f);
+            binding.tabLayout.setAlpha(1f);
+            binding.detailThumbnailImageView.setAlpha(1f);
+            setImmersiveBackgrounds(false);
+            if (isPlayerAvailable()) {
+                player.UIs().get(MainPlayerUi.class).ifPresent(ui ->
+                        ui.getBinding().metadataView.setVisibility(
+                                ui.isFullscreen() ? View.VISIBLE : View.GONE));
+            }
+            setHeightThumbnail();
+        }
+    }
+
+    /** Leaves the immersive view at once, without an animation. */
+    private void resetImmersive() {
+        if (immersiveAnimator != null) {
+            immersiveAnimator.cancel();
+            immersiveAnimator = null;
+        }
+        if (frameBlur != null) {
+            frameBlur.stop();
+        }
+        if (binding != null && (immersive || immersiveActive)) {
+            finishImmersive(false);
+        }
+        immersive = false;
+        immersiveActive = false;
+        immersiveProgress = 0f;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
     // Bottom mini player
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -2350,6 +2599,10 @@ public final class VideoDetailFragment
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
         bottomSheetBehavior.setState(lastStableBottomSheetState);
         updateBottomSheetState(lastStableBottomSheetState);
+        // While the player is expanded, dragging down is used by the immersive view.
+        // The down arrow is the only way to shrink it into the mini player.
+        bottomSheetBehavior.setDraggable(
+                lastStableBottomSheetState != BottomSheetBehavior.STATE_EXPANDED);
 
         final int peekHeight = getResources().getDimensionPixelSize(R.dimen.mini_player_height);
         if (bottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
@@ -2367,6 +2620,13 @@ public final class VideoDetailFragment
             @Override
             public void onStateChanged(@NonNull final View bottomSheet, final int newState) {
                 updateBottomSheetState(newState);
+                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                    bottomSheetBehavior.setDraggable(false);
+                } else if (newState == BottomSheetBehavior.STATE_COLLAPSED
+                        || newState == BottomSheetBehavior.STATE_HIDDEN) {
+                    bottomSheetBehavior.setDraggable(true);
+                    resetImmersive();
+                }
 
                 switch (newState) {
                     case BottomSheetBehavior.STATE_HIDDEN:

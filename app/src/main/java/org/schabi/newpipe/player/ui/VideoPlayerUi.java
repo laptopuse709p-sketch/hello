@@ -250,7 +250,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.openInBrowser.setOnClickListener(makeOnClickListener(this::onOpenInBrowserClicked));
         binding.playerCloseButton.setOnClickListener(makeOnClickListener(() ->
                 // set package to this app's package to prevent the intent from being seen outside
-                context.sendBroadcast(new Intent(VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER)
+                context.sendBroadcast(new Intent(VideoDetailFragment.ACTION_COLLAPSE_MAIN_PLAYER)
                         .setPackage(App.PACKAGE_NAME))
         ));
         binding.switchMute.setOnClickListener(makeOnClickListener(player::toggleMute));

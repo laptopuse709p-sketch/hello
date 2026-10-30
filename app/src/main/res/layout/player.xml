@@ -113,7 +113,7 @@
                         android:focusable="true"
                         android:padding="@dimen/player_main_buttons_padding"
                         android:scaleType="fitXY"
-                        android:src="@drawable/ic_close"
+                        android:src="@drawable/ic_expand_more"
                         android:visibility="gone"
                         app:tint="@color/white"
                         tools:ignore="RtlHardcoded" />
