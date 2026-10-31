@@ -118,9 +118,9 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
                     }
                     final CommentsInfoItem first = info.getRelatedItems().get(0);
                     final Description description = first.getCommentText();
-                    final String content = description == null ? "" : description.getContent();
+                    final String content = description == null ? "" : description.content();
                     final CharSequence text = description != null
-                            && description.getType() == Description.HTML
+                            && description.type() == Description.Type.HTML
                             ? HtmlCompat.fromHtml(content, HtmlCompat.FROM_HTML_MODE_COMPACT)
                             : content;
                     binding.commentsPreviewText.setText(text);
