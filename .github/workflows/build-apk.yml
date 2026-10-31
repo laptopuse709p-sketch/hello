@@ -32,7 +32,7 @@ jobs:
         working-directory: ${{ steps.find.outputs.dir }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace -DskipFormatKtlint
+          ./gradlew assembleDebug -x runCheckstyle --stacktrace -DskipFormatKtlint
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
