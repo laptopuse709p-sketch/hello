@@ -701,6 +701,7 @@ public final class Player implements PlaybackListener, Listener {
 
         saveStreamProgressState();
         setRecovery();
+        stopWaitingForNetwork();
         stopActivityBinding();
 
         destroyPlayer();
@@ -1583,9 +1584,22 @@ public final class Player implements PlaybackListener, Listener {
             case ERROR_CODE_IO_NETWORK_CONNECTION_FAILED:
             case ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT:
             case ERROR_CODE_UNSPECIFIED:
-                // Reload playback on unexpected errors:
-                setRecovery();
-                reloadPlayQueueManager();
+                if (!isDeviceOnline()) {
+                    // No internet: do NOT reload now (it would fail again and loop).
+                    // Wait quietly and resume once, when the connection comes back.
+                    isCatchableException = true;
+                    waitForNetworkThenReload();
+                } else if (allowAutoRetry()) {
+                    // Online but a temporary problem: retry a limited number of times
+                    isCatchableException = true;
+                    setRecovery();
+                    reloadPlayQueueManager();
+                } else {
+                    // Too many failed retries in a row: stop and tell the user once
+                    if (!exoPlayerIsNull()) {
+                        simpleExoPlayer.pause();
+                    }
+                }
                 break;
             default:
                 // API, remote and renderer errors belong here:
@@ -1615,6 +1629,93 @@ public final class Player implements PlaybackListener, Listener {
                     currentMetadata.getServiceId(), currentMetadata.getStreamUrl());
         }
         ErrorUtil.createNotification(context, errorInfo);
+    }
+
+    // Offline handling: wait for the network instead of retrying in a loop
+    private android.net.ConnectivityManager.NetworkCallback networkRetryCallback;
+    private int autoRetryCount = 0;
+    private long lastAutoRetryMs = 0;
+
+    @SuppressWarnings("deprecation")
+    private boolean isDeviceOnline() {
+        final android.net.ConnectivityManager cm = (android.net.ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) {
+            return true;
+        }
+        final android.net.NetworkInfo info = cm.getActiveNetworkInfo();
+        return info != null && info.isConnected();
+    }
+
+    /** Allows at most 3 automatic retries in a row; the counter resets after 30s of calm. */
+    private boolean allowAutoRetry() {
+        final long now = android.os.SystemClock.elapsedRealtime();
+        if (now - lastAutoRetryMs > 30_000) {
+            autoRetryCount = 0;
+        }
+        lastAutoRetryMs = now;
+        autoRetryCount++;
+        return autoRetryCount <= 3;
+    }
+
+    private void waitForNetworkThenReload() {
+        if (networkRetryCallback != null) {
+            return; // already waiting, so repeated errors do nothing
+        }
+        setRecovery(); // remember the position
+        if (!exoPlayerIsNull()) {
+            simpleExoPlayer.pause();
+        }
+        android.widget.Toast.makeText(context, R.string.network_error,
+                android.widget.Toast.LENGTH_SHORT).show();
+
+        final android.net.ConnectivityManager cm = (android.net.ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) {
+            return;
+        }
+        final android.os.Handler mainHandler =
+                new android.os.Handler(android.os.Looper.getMainLooper());
+        networkRetryCallback = new android.net.ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull final android.net.Network network) {
+                // small delay so the connection can settle, then reload exactly once
+                mainHandler.postDelayed(() -> {
+                    if (networkRetryCallback == null) {
+                        return;
+                    }
+                    stopWaitingForNetwork();
+                    if (!exoPlayerIsNull() && playQueue != null) {
+                        reloadPlayQueueManager();
+                        simpleExoPlayer.play();
+                    }
+                }, 1000);
+            }
+        };
+        try {
+            cm.registerNetworkCallback(new android.net.NetworkRequest.Builder()
+                    .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build(), networkRetryCallback);
+        } catch (final RuntimeException e) {
+            Log.e(TAG, "Could not register network callback", e);
+            networkRetryCallback = null;
+        }
+    }
+
+    private void stopWaitingForNetwork() {
+        if (networkRetryCallback == null) {
+            return;
+        }
+        final android.net.ConnectivityManager cm = (android.net.ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        try {
+            if (cm != null) {
+                cm.unregisterNetworkCallback(networkRetryCallback);
+            }
+        } catch (final RuntimeException ignored) {
+            // already unregistered
+        }
+        networkRetryCallback = null;
     }
     //endregion
 
