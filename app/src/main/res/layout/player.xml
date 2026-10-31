@@ -523,6 +523,23 @@
                     tools:ignore="HardcodedText,RtlHardcoded,RtlSymmetry" />
 
                 <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/lockButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/lock_controls"
+                    android:focusable="true"
+                    android:nextFocusUp="@id/playbackSeekBar"
+                    android:padding="@dimen/player_main_buttons_padding"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_fullscreen_lock_open"
+                    android:visibility="gone"
+                    app:tint="@color/white"
+                    tools:ignore="RtlHardcoded" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
                     android:id="@+id/screenRotationButton"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
@@ -827,5 +844,28 @@
         android:layout_height="match_parent"
         android:alpha="0"
         android:visibility="invisible" /> <!-- Required for the first appearance fading correctly -->
+
+    <!-- Fullscreen lock: swallows every touch while locked; only the unlock icon works -->
+    <FrameLayout
+        android:id="@+id/fullscreenLockOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="false"
+        android:visibility="gone">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/unlockButton"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_lock_circle"
+            android:contentDescription="@string/unlock_controls"
+            android:padding="16dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_fullscreen_lock"
+            android:visibility="gone"
+            app:tint="@color/white" />
+    </FrameLayout>
 
 </RelativeLayout>

@@ -165,6 +165,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 toggleFullscreen();
             }
         }));
+        binding.lockButton.setOnClickListener(v -> setControlsLocked(true));
+        binding.fullscreenLockOverlay.setOnClickListener(v -> showUnlockIconTemporarily());
+        binding.unlockButton.setOnClickListener(v -> setControlsLocked(false));
         binding.queueButton.setOnClickListener(v -> onQueueClicked());
         binding.segmentsButton.setOnClickListener(v -> onSegmentsClicked());
 
@@ -882,7 +885,66 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     //////////////////////////////////////////////////////////////////////////*/
     //region Video size, orientation, fullscreen
 
+    // region Fullscreen lock
+    private boolean controlsLocked = false;
+    private final Runnable hideUnlockIcon = () -> {
+        if (binding != null) {
+            binding.unlockButton.setVisibility(View.GONE);
+        }
+    };
+
+    public boolean isControlsLocked() {
+        return controlsLocked;
+    }
+
+    /** Locks or unlocks the screen: while locked every touch is ignored, video keeps playing. */
+    public void setControlsLocked(final boolean locked) {
+        controlsLocked = locked;
+        binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
+        binding.unlockButton.setVisibility(View.GONE);
+        if (locked) {
+            binding.fullscreenLockOverlay.setVisibility(View.VISIBLE);
+            hideControls(0, 0);
+        } else {
+            binding.fullscreenLockOverlay.setVisibility(View.GONE);
+            showControlsThenHide();
+        }
+    }
+
+    /** Shows only the unlock icon for a couple of seconds (after a tap or Back). */
+    public void showUnlockIconTemporarily() {
+        if (!controlsLocked) {
+            return;
+        }
+        binding.unlockButton.setVisibility(View.VISIBLE);
+        binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
+        binding.fullscreenLockOverlay.postDelayed(hideUnlockIcon, 2500);
+    }
+
+    private void unlockSilently() {
+        controlsLocked = false;
+        binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
+        binding.fullscreenLockOverlay.setVisibility(View.GONE);
+        binding.unlockButton.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showControls(final long duration) {
+        if (!controlsLocked) {
+            super.showControls(duration);
+        }
+    }
+
+    @Override
+    public void showControlsThenHide() {
+        if (!controlsLocked) {
+            super.showControlsThenHide();
+        }
+    }
+    // endregion
+
     private void setupScreenRotationButton() {
+        binding.lockButton.setVisibility(isFullscreen ? View.VISIBLE : View.GONE);
         binding.screenRotationButton.setVisibility(globalScreenOrientationLocked(context)
                 || isVerticalVideo || DeviceUtils.isTablet(context)
                 ? View.VISIBLE : View.GONE);
@@ -929,6 +991,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             // Apply window insets because Android will not do it when orientation changes
             // from landscape to portrait (open vertical video to reproduce)
             binding.playbackControlRoot.setPadding(0, 0, 0, 0);
+        }
+        if (!isFullscreen) {
+            unlockSilently(); // leaving fullscreen always unlocks
         }
         fragmentListener.onFullscreenStateChanged(isFullscreen);
 

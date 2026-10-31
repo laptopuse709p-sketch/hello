@@ -719,6 +719,16 @@ public final class VideoDetailFragment
             return true;
         }
 
+        // Locked fullscreen: Back only shows the unlock icon
+        if (isFullscreen() && isPlayerAvailable()) {
+            final Optional<MainPlayerUi> lockedUi = player.UIs().get(MainPlayerUi.class)
+                    .filter(MainPlayerUi::isControlsLocked);
+            if (lockedUi.isPresent()) {
+                lockedUi.get().showUnlockIconTemporarily();
+                return true;
+            }
+        }
+
         // If we are in fullscreen mode just exit from it via first back press
         if (isFullscreen()) {
             if (!DeviceUtils.isTablet(activity)) {

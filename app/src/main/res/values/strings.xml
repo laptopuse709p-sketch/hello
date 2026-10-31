@@ -913,4 +913,6 @@
     <string name="topic_technology">Technology</string>
     <string name="topic_phonk">Phonk</string>
     <string name="topic_blank">Blank</string>
+    <string name="lock_controls">Lock screen</string>
+    <string name="unlock_controls">Unlock screen</string>
 </resources>
