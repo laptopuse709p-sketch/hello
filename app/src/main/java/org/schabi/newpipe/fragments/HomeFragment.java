@@ -13,6 +13,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.R;
@@ -33,15 +36,18 @@ public class HomeFragment extends BaseFragment {
             R.string.topic_ai,
             R.string.topic_technology,
             R.string.topic_phonk,
+            R.string.topic_blank,
     };
     private static final String[] TOPIC_QUERIES = {
-            "AI technology phonk",
+            TopicFragment.FOR_YOU, // "All" follows the user's search and watch history
             "AI",
             "technology",
             "phonk",
+            null, // blank category: intentionally has no feed
     };
 
     private LinearLayout chipsContainer;
+    private SwipeRefreshLayout swipeRefresh;
     private int selectedTopic = 0;
 
     @Override
@@ -72,6 +78,26 @@ public class HomeFragment extends BaseFragment {
         }
         updateChipSelection();
 
+        swipeRefresh = rootView.findViewById(R.id.home_swipe);
+        // only start a refresh when the list is scrolled to the very top
+        swipeRefresh.setOnChildScrollUpCallback((parent, child) -> {
+            final RecyclerView list = rootView.findViewById(R.id.items_list);
+            return list != null && list.canScrollVertically(-1);
+        });
+        swipeRefresh.setOnRefreshListener(() -> {
+            final Fragment current = getChildFragmentManager()
+                    .findFragmentById(R.id.topic_holder);
+            if (current instanceof TopicFragment) {
+                ((TopicFragment) current).reloadContent(); // new interest, new videos
+            }
+            // the list shows its own loading state, so end the pull spinner shortly
+            swipeRefresh.postDelayed(() -> {
+                if (swipeRefresh != null) {
+                    swipeRefresh.setRefreshing(false);
+                }
+            }, 700);
+        });
+
         if (getChildFragmentManager().findFragmentById(R.id.topic_holder) == null) {
             showTopic(selectedTopic);
         }
@@ -87,6 +113,7 @@ public class HomeFragment extends BaseFragment {
     public void onDestroyView() {
         super.onDestroyView();
         chipsContainer = null;
+        swipeRefresh = null;
     }
 
     private View createChip(final int index) {
@@ -124,6 +151,21 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void showTopic(final int index) {
+        if (TOPIC_QUERIES[index] == null) {
+            // blank category: remove the feed and show nothing
+            final Fragment current = getChildFragmentManager()
+                    .findFragmentById(R.id.topic_holder);
+            if (current != null) {
+                getChildFragmentManager().beginTransaction().remove(current).commit();
+            }
+            if (swipeRefresh != null) {
+                swipeRefresh.setEnabled(false);
+            }
+            return;
+        }
+        if (swipeRefresh != null) {
+            swipeRefresh.setEnabled(true);
+        }
         final TopicFragment fragment = TopicFragment.newInstance(
                 ServiceHelper.getSelectedServiceId(requireContext()), TOPIC_QUERIES[index]);
         fragment.useAsFrontPage(true);

@@ -19,6 +19,7 @@ import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.search.SearchInfo;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.InterestFeedHelper;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,8 +34,14 @@ public class TopicFragment extends BaseListInfoFragment<InfoItem, SearchInfo> {
     private static final List<String> VIDEO_FILTER = Collections.singletonList("videos");
     private static final String APP_TITLE = "Pipe";
 
+    /** Special query: build the feed from the user's search and watch history. */
+    public static final String FOR_YOU = "@for_you";
+
     @State
     String query = "";
+    /** The real search text in use (differs from {@link #query} in For You mode). */
+    @State
+    String activeQuery = "";
 
     public static TopicFragment newInstance(final int serviceId, final String topicQuery) {
         final TopicFragment instance = new TopicFragment();
@@ -62,12 +69,24 @@ public class TopicFragment extends BaseListInfoFragment<InfoItem, SearchInfo> {
 
     @Override
     public Single<SearchInfo> loadResult(final boolean forceReload) {
+        if (FOR_YOU.equals(query)) {
+            // a fresh interest every time the feed loads or is pulled to refresh
+            return InterestFeedHelper.pickQuery(requireContext())
+                    .flatMap(picked -> {
+                        activeQuery = picked;
+                        return ExtractorHelper.searchFor(serviceId, picked, VIDEO_FILTER, "");
+                    });
+        }
+        activeQuery = query;
         return ExtractorHelper.searchFor(serviceId, query, VIDEO_FILTER, "");
     }
 
     @Override
     public Single<ListExtractor.InfoItemsPage<InfoItem>> loadMoreItemsLogic() {
-        return ExtractorHelper.getMoreSearchItems(serviceId, query, VIDEO_FILTER, "",
+        final String moreQuery = activeQuery == null || activeQuery.isEmpty()
+                ? (FOR_YOU.equals(query) ? InterestFeedHelper.FALLBACK_QUERY : query)
+                : activeQuery;
+        return ExtractorHelper.getMoreSearchItems(serviceId, moreQuery, VIDEO_FILTER, "",
                 currentNextPage);
     }
 

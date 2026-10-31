@@ -16,6 +16,7 @@ import org.schabi.newpipe.database.BasicDAO
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
 import org.schabi.newpipe.database.history.model.StreamHistoryEntry
 import org.schabi.newpipe.database.stream.StreamStatisticsEntry
+import org.schabi.newpipe.database.stream.model.StreamEntity
 
 @Dao
 @DaoReturnTypeConverters(RxDaoReturnTypeConverters::class)
@@ -39,6 +40,12 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
 
     @Query("SELECT * FROM stream_history WHERE stream_id = :streamId ORDER BY access_date DESC LIMIT 1")
     abstract fun getLatestEntry(streamId: Long): StreamHistoryEntity?
+
+    @Query(
+        "SELECT s.* FROM streams s INNER JOIN stream_history h ON s.uid = h.stream_id " +
+            "ORDER BY h.access_date DESC LIMIT :limit"
+    )
+    abstract fun getRecentlyWatchedStreams(limit: Int): Flowable<MutableList<StreamEntity>>
 
     @Query("DELETE FROM stream_history WHERE stream_id = :streamId")
     abstract fun deleteStreamHistory(streamId: Long): Int
