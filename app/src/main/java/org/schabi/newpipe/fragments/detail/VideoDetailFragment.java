@@ -920,18 +920,18 @@ public final class VideoDetailFragment
         tabIcons.clear();
         tabContentDescriptions.clear();
 
-        if (shouldShowComments()) {
-            pageAdapter.addFragment(
-                    CommentsFragment.getInstance(serviceId, url, title), COMMENTS_TAB_TAG);
-            tabIcons.add(R.drawable.ic_comment);
-            tabContentDescriptions.add(R.string.comments_tab_description);
-        }
-
         if (showRelatedItems && binding.relatedItemsLayout == null) {
             // temp empty fragment. will be updated in handleResult
             pageAdapter.addFragment(EmptyFragment.newInstance(false), RELATED_TAB_TAG);
             tabIcons.add(R.drawable.ic_art_track);
             tabContentDescriptions.add(R.string.related_items_tab_description);
+        }
+
+        if (shouldShowComments()) {
+            pageAdapter.addFragment(
+                    CommentsFragment.getInstance(serviceId, url, title), COMMENTS_TAB_TAG);
+            tabIcons.add(R.drawable.ic_comment);
+            tabContentDescriptions.add(R.string.comments_tab_description);
         }
 
         if (showDescription) {
@@ -970,6 +970,17 @@ public final class VideoDetailFragment
                 tab.setIcon(tabIcons.get(i));
                 tab.setContentDescription(tabContentDescriptions.get(i));
             }
+        }
+    }
+
+    /** Opens the full comments tab (used by the comments preview card). */
+    public void showCommentsTab() {
+        if (binding == null || pageAdapter == null) {
+            return;
+        }
+        final int pos = pageAdapter.getItemPositionByTitle(COMMENTS_TAB_TAG);
+        if (pos >= 0) {
+            binding.viewPager.setCurrentItem(pos, true);
         }
     }
 

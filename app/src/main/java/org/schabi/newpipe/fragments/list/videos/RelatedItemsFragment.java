@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.text.HtmlCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
@@ -23,12 +24,20 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
+import org.schabi.newpipe.extractor.stream.Description;
+import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.ktx.ViewUtils;
+import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.image.CoilHelper;
 
 import java.io.Serializable;
 import java.util.function.Supplier;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, RelatedItemsInfo>
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -41,6 +50,7 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
     //////////////////////////////////////////////////////////////////////////*/
 
     private RelatedItemsHeaderBinding headerBinding;
+    private final CompositeDisposable commentsDisposables = new CompositeDisposable();
 
     public static RelatedItemsFragment getInstance(final StreamInfo info) {
         final RelatedItemsFragment instance = new RelatedItemsFragment();
@@ -65,6 +75,7 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
 
     @Override
     public void onDestroyView() {
+        commentsDisposables.clear();
         headerBinding = null;
         super.onDestroyView();
     }
@@ -86,7 +97,43 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
                 PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
                         .putBoolean(getString(R.string.auto_queue_key), b).apply());
 
+        loadCommentsPreview();
         return headerBinding::getRoot;
+    }
+
+    /** Shows the first comment above the recommended videos; tapping opens all comments. */
+    private void loadCommentsPreview() {
+        final RelatedItemsHeaderBinding binding = headerBinding;
+        if (binding == null || !PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .getBoolean(getString(R.string.show_comments_key), true)) {
+            return;
+        }
+        commentsDisposables.add(ExtractorHelper.getCommentsInfo(serviceId, url, false)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(info -> {
+                    if (headerBinding != binding || info.isCommentsDisabled()
+                            || info.getRelatedItems().isEmpty()) {
+                        return;
+                    }
+                    final CommentsInfoItem first = info.getRelatedItems().get(0);
+                    final Description description = first.getCommentText();
+                    final String content = description == null ? "" : description.getContent();
+                    final CharSequence text = description != null
+                            && description.getType() == Description.HTML
+                            ? HtmlCompat.fromHtml(content, HtmlCompat.FROM_HTML_MODE_COMPACT)
+                            : content;
+                    binding.commentsPreviewText.setText(text);
+                    CoilHelper.INSTANCE.loadAvatar(binding.commentsPreviewAvatar,
+                            first.getUploaderAvatars());
+                    binding.commentsPreviewCard.setVisibility(View.VISIBLE);
+                    binding.commentsPreviewCard.setOnClickListener(v -> {
+                        final Fragment parent = getParentFragment();
+                        if (parent instanceof VideoDetailFragment) {
+                            ((VideoDetailFragment) parent).showCommentsTab();
+                        }
+                    });
+                }, throwable -> { /* the preview is optional: ignore errors */ }));
     }
 
     @Override
