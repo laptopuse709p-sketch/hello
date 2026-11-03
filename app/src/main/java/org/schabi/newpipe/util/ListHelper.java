@@ -408,7 +408,48 @@ public final class ListHelper {
                 || compareVideoStreamResolution(maxResolution, resolution) < 1)) {
             resolution = maxResolution;
         }
+
+        // Auto quality: when the setting is "best", pick the best resolution the current
+        // internet speed can play smoothly instead of always the highest one.
+        if (resolution.equals(context.getString(R.string.best_resolution_key))) {
+            final String auto = autoResolutionForBandwidth(context);
+            if (auto != null) {
+                resolution = auto;
+            }
+        }
         return resolution;
+    }
+
+    /** True when the quality setting is on its default "best" value, i.e. Auto is active. */
+    public static boolean isAutoResolution(@NonNull final Context context) {
+        final SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(context);
+        return preferences.getString(context.getString(R.string.default_resolution_key),
+                context.getString(R.string.default_resolution_value))
+                .equals(context.getString(R.string.best_resolution_key));
+    }
+
+    /**
+     * Highest resolution whose typical bitrate fits into ~70% of the estimated bandwidth,
+     * or null if the speed is not known yet (then the best one is used).
+     */
+    @Nullable
+    private static String autoResolutionForBandwidth(@NonNull final Context context) {
+        final long bps = com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
+                .getSingletonInstance(context).getBitrateEstimate();
+        if (bps <= 0) {
+            return null;
+        }
+        final String[] resolutions = {"2160p", "1440p", "1080p", "720p", "480p", "360p", "240p"};
+        // typical bits per second of video + audio at each resolution
+        final long[] needed = {20_000_000L, 10_000_000L, 5_000_000L, 2_800_000L, 1_400_000L,
+                800_000L, 400_000L};
+        for (int i = 0; i < resolutions.length; i++) {
+            if (needed[i] <= bps * 0.7) {
+                return resolutions[i];
+            }
+        }
+        return "144p";
     }
 
     /**

@@ -297,7 +297,7 @@ public final class Player implements PlaybackListener, Listener {
 
         trackSelector = new DefaultTrackSelector(context, PlayerHelper.getQualitySelector());
         final PlayerDataSource dataSource = new PlayerDataSource(context,
-                new DefaultBandwidthMeter.Builder(context).build());
+                DefaultBandwidthMeter.getSingletonInstance(context));
         loadController = new LoadController();
 
         renderFactory = prefs.getBoolean(
@@ -1092,6 +1092,9 @@ public final class Player implements PlaybackListener, Listener {
                 break;
             case com.google.android.exoplayer2.Player.STATE_BUFFERING: // 2
                 if (isPrepared) {
+                    if (currentState == STATE_PLAYING) {
+                        maybeLowerQualityAfterStall();
+                    }
                     changeState(STATE_BUFFERING);
                 }
                 break;
@@ -1455,6 +1458,7 @@ public final class Player implements PlaybackListener, Listener {
 
         // Refresh the playback if there is a transition to the next video
         final int newIndex = newPosition.mediaItemIndex;
+        lastDiscontinuityMs = android.os.SystemClock.elapsedRealtime();
         switch (discontinuityReason) {
             case DISCONTINUITY_REASON_AUTO_TRANSITION:
             case DISCONTINUITY_REASON_REMOVE:
@@ -2468,6 +2472,56 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public void setPlaybackQuality(@Nullable final String quality) {
+        userPickedQuality = true; // the user chose: Auto stops changing it
+        applyPlaybackQuality(quality);
+    }
+
+    // Auto quality: step down one resolution when playback stalls repeatedly
+    private boolean userPickedQuality = false;
+    private final java.util.ArrayDeque<Long> recentStalls = new java.util.ArrayDeque<>();
+    private long lastAutoLowerMs = 0;
+    private long lastDiscontinuityMs = 0;
+
+    private void maybeLowerQualityAfterStall() {
+        final long now = android.os.SystemClock.elapsedRealtime();
+        if (userPickedQuality || !ListHelper.isAutoResolution(context)
+                || now - lastDiscontinuityMs < 4000 // a seek, not a real stall
+                || now - lastAutoLowerMs < 20_000) {
+            return;
+        }
+        recentStalls.addLast(now);
+        while (!recentStalls.isEmpty() && now - recentStalls.peekFirst() > 30_000) {
+            recentStalls.removeFirst();
+        }
+        if (recentStalls.size() < 2) {
+            return;
+        }
+        final Optional<VideoStream> selected = getSelectedVideoStream();
+        final MediaItemTag.Quality quality = currentMetadata == null ? null
+                : currentMetadata.getMaybeQuality().orElse(null);
+        if (!selected.isPresent() || quality == null) {
+            return;
+        }
+        final List<VideoStream> streams = quality.getSortedVideoStreams();
+        final int index = quality.getSelectedVideoStreamIndex();
+        // streams are sorted best first, so the next lower resolution has a higher index
+        for (int i = index + 1; i < streams.size(); i++) {
+            final String lower = streams.get(i).getResolution();
+            if (!lower.equals(selected.get().getResolution())) {
+                recentStalls.clear();
+                lastAutoLowerMs = now;
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    android.widget.Toast.makeText(context,
+                            context.getString(R.string.auto_quality_lowered, lower),
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    applyPlaybackQuality(lower);
+                });
+                return;
+            }
+        }
+    }
+
+    private void applyPlaybackQuality(@Nullable final String quality) {
         saveStreamProgressState();
         setRecovery();
         videoResolver.setPlaybackQuality(quality);

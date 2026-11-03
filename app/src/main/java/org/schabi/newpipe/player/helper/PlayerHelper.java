@@ -265,15 +265,9 @@ public final class PlayerHelper {
     }
 
     public static boolean isAutoplayAllowedByUser(@NonNull final Context context) {
-        switch (PlayerHelper.getAutoplayType(context)) {
-            case PlayerHelper.AutoplayType.AUTOPLAY_TYPE_NEVER:
-                return false;
-            case PlayerHelper.AutoplayType.AUTOPLAY_TYPE_WIFI:
-                return !ListHelper.isMeteredNetwork(context);
-            case PlayerHelper.AutoplayType.AUTOPLAY_TYPE_ALWAYS:
-            default:
-                return true;
-        }
+        // A tapped video always starts playing right away (no second tap needed),
+        // on Wi-Fi and on mobile data.
+        return true;
     }
 
     @NonNull

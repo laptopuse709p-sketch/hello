@@ -2468,6 +2468,7 @@ public final class VideoDetailFragment
         final int height = Math.round(
                 immersiveBaseHeight + (immersiveFullHeight - immersiveBaseHeight) * p);
         setHeightThumbnail(height, getResources().getDisplayMetrics());
+        applyImmersiveSubtitleScale(height);
 
         final float contentAlpha = 1f - Math.min(1f, p * 1.6f);
         binding.detailContentRootLayout.setAlpha(contentAlpha);
@@ -2476,6 +2477,30 @@ public final class VideoDetailFragment
         binding.detailThumbnailImageView.setAlpha(1f - p);
         binding.immersiveBlurBackground.setAlpha(p);
         binding.immersiveDimOverlay.setAlpha(p);
+    }
+
+    /**
+     * Subtitle size is a fraction of the player height, which becomes full screen in the
+     * immersive view and made captions huge. Scale it back to the video size and keep the
+     * captions at the bottom edge of the centered video.
+     */
+    private void applyImmersiveSubtitleScale(final int height) {
+        if (!isPlayerAvailable() || height <= 0 || immersiveBaseHeight <= 0) {
+            return;
+        }
+        final float ratio = Math.min(1f, immersiveBaseHeight / (float) height);
+        final float userScale = PlayerHelper.getCaptionScale(requireContext());
+        player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
+            final com.google.android.exoplayer2.ui.SubtitleView subtitles =
+                    ui.getBinding().subtitleView;
+            subtitles.setFractionalTextSize(
+                    com.google.android.exoplayer2.ui.SubtitleView.DEFAULT_TEXT_SIZE_FRACTION
+                            * userScale * ratio);
+            final float gapBelowVideo = (height - immersiveBaseHeight) / 2f / height;
+            subtitles.setBottomPaddingFraction(gapBelowVideo
+                    + com.google.android.exoplayer2.ui.SubtitleView
+                            .DEFAULT_BOTTOM_PADDING_FRACTION * ratio);
+        });
     }
 
     private void animateImmersiveTo(final float target) {
