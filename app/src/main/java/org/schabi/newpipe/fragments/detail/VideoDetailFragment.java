@@ -111,6 +111,8 @@ import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.InfoCache;
+import org.schabi.newpipe.util.SkeletonHelper;
+import org.schabi.newpipe.util.StreamPrefetcher;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -1422,6 +1424,9 @@ public final class VideoDetailFragment
     @Override
     public void handleError() {
         super.handleError();
+        if (binding != null) {
+            SkeletonHelper.setActive(binding.detailSkeleton, false);
+        }
         setErrorImage(R.drawable.not_available_monkey);
 
         if (binding.relatedItemsLayout != null) { // hide related streams for tablets
@@ -1507,6 +1512,8 @@ public final class VideoDetailFragment
         //if data is already cached, transition from VISIBLE -> INVISIBLE -> VISIBLE is not required
         if (!ExtractorHelper.isCached(serviceId, url, InfoCache.Type.STREAM)) {
             binding.detailContentRootHiding.setVisibility(View.INVISIBLE);
+            // placeholder blocks instead of an empty gap while the new video loads
+            SkeletonHelper.setActive(binding.detailSkeleton, true);
         }
 
         animate(binding.detailThumbnailPlayButton, false, 50);
@@ -1540,8 +1547,19 @@ public final class VideoDetailFragment
     }
 
     @Override
+    public void hideLoading() {
+        super.hideLoading();
+        if (binding != null) {
+            SkeletonHelper.setActive(binding.detailSkeleton, false);
+        }
+    }
+
+    @Override
     public void handleResult(@NonNull final StreamInfo info) {
         super.handleResult(info);
+
+        // warm the cache for the next likely videos so switching is instant
+        StreamPrefetcher.prefetch(info.getServiceId(), info.getRelatedItems(), 2);
 
         currentInfo = info;
         setInitialData(info.getServiceId(), info.getOriginalUrl(), info.getName(), playQueue);

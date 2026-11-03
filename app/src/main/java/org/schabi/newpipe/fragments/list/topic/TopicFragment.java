@@ -20,6 +20,7 @@ import org.schabi.newpipe.extractor.search.SearchInfo;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.InterestFeedHelper;
+import org.schabi.newpipe.util.StreamPrefetcher;
 
 import java.util.Collections;
 import java.util.List;
@@ -93,6 +94,8 @@ public class TopicFragment extends BaseListInfoFragment<InfoItem, SearchInfo> {
     @Override
     public void handleResult(@NonNull final SearchInfo result) {
         super.handleResult(result);
+        // pre-load the first videos so tapping one starts quickly
+        StreamPrefetcher.prefetch(serviceId, result.getRelatedItems(), 2);
         name = APP_TITLE;
         setTitle(APP_TITLE);
     }

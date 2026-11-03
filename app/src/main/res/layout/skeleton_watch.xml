@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/detail_skeleton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_below="@+id/detail_title_root_layout"
+    android:orientation="vertical"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_skeleton_circle" />
+
+        <View
+            android:layout_width="140dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_skeleton" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="16dp">
+
+        <View
+            android:layout_width="84dp"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_skeleton" />
+
+        <View
+            android:layout_width="84dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_skeleton" />
+
+        <View
+            android:layout_width="84dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_skeleton" />
+    </LinearLayout>
+
+    <include layout="@layout/skeleton_card" />
+    <include layout="@layout/skeleton_card" />
+</LinearLayout>

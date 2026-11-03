@@ -21,6 +21,7 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorPanelHelper;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.util.InfoCache;
+import org.schabi.newpipe.util.SkeletonHelper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,6 +36,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
     protected TextView emptyStateMessageView;
     @Nullable
     private ProgressBar loadingProgressBar;
+    private View loadingSkeleton;
 
     private ErrorPanelHelper errorPanelHelper;
     @Nullable
@@ -71,6 +73,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         emptyStateView = rootView.findViewById(R.id.empty_state_view);
         emptyStateMessageView = rootView.findViewById(R.id.empty_state_message);
         loadingProgressBar = rootView.findViewById(R.id.loading_progress_bar);
+        loadingSkeleton = rootView.findViewById(R.id.loading_skeleton);
         errorPanelHelper = new ErrorPanelHelper(this, rootView, this::onRetryButtonClicked);
     }
 
@@ -117,7 +120,10 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         if (emptyStateView != null) {
             animate(emptyStateView, false, 150);
         }
-        if (loadingProgressBar != null) {
+        if (loadingSkeleton != null) {
+            // skeleton cards instead of a lone spinner: feels faster
+            SkeletonHelper.setActive(loadingSkeleton, true);
+        } else if (loadingProgressBar != null) {
             animate(loadingProgressBar, true, 400);
         }
         hideErrorPanel();
@@ -128,6 +134,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         if (emptyStateView != null) {
             animate(emptyStateView, false, 150);
         }
+        SkeletonHelper.setActive(loadingSkeleton, false);
         if (loadingProgressBar != null) {
             animate(loadingProgressBar, false, 0);
         }
@@ -140,6 +147,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         if (emptyStateView != null) {
             animate(emptyStateView, true, 200);
         }
+        SkeletonHelper.setActive(loadingSkeleton, false);
         if (loadingProgressBar != null) {
             animate(loadingProgressBar, false, 0);
         }
@@ -161,6 +169,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         if (emptyStateView != null) {
             animate(emptyStateView, false, 150);
         }
+        SkeletonHelper.setActive(loadingSkeleton, false);
         if (loadingProgressBar != null) {
             animate(loadingProgressBar, false, 0);
         }

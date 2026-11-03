@@ -232,6 +232,8 @@
                     android:visibility="gone"
                     tools:visibility="gone" />
 
+                <include layout="@layout/skeleton_watch" />
+
                 <!--HIDING ROOT-->
                 <LinearLayout
                     android:id="@+id/detail_content_root_hiding"
