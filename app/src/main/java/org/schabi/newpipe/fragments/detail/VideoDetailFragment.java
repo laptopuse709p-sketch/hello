@@ -1425,7 +1425,7 @@ public final class VideoDetailFragment
     public void handleError() {
         super.handleError();
         if (binding != null) {
-            SkeletonHelper.setActive(binding.detailSkeleton, false);
+            SkeletonHelper.setActive(detailSkeletonView(), false);
         }
         setErrorImage(R.drawable.not_available_monkey);
 
@@ -1513,7 +1513,7 @@ public final class VideoDetailFragment
         if (!ExtractorHelper.isCached(serviceId, url, InfoCache.Type.STREAM)) {
             binding.detailContentRootHiding.setVisibility(View.INVISIBLE);
             // placeholder blocks instead of an empty gap while the new video loads
-            SkeletonHelper.setActive(binding.detailSkeleton, true);
+            SkeletonHelper.setActive(detailSkeletonView(), true);
         }
 
         animate(binding.detailThumbnailPlayButton, false, 50);
@@ -1546,11 +1546,17 @@ public final class VideoDetailFragment
         binding.detailSubChannelThumbnailView.setImageBitmap(null);
     }
 
+    /** The skeleton comes from an include, so it has no binding field: look it up by id. */
+    @Nullable
+    private View detailSkeletonView() {
+        return binding == null ? null : binding.getRoot().findViewById(R.id.detail_skeleton);
+    }
+
     @Override
     public void hideLoading() {
         super.hideLoading();
         if (binding != null) {
-            SkeletonHelper.setActive(binding.detailSkeleton, false);
+            SkeletonHelper.setActive(detailSkeletonView(), false);
         }
     }
 
