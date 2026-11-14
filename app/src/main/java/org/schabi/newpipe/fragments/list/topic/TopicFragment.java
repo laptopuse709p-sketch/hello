@@ -71,11 +71,11 @@ public class TopicFragment extends BaseListInfoFragment<InfoItem, SearchInfo> {
     @Override
     public Single<SearchInfo> loadResult(final boolean forceReload) {
         if (FOR_YOU.equals(query)) {
-            // a fresh interest every time the feed loads or is pulled to refresh
-            return InterestFeedHelper.pickQuery(requireContext())
-                    .flatMap(picked -> {
-                        activeQuery = picked;
-                        return ExtractorHelper.searchFor(serviceId, picked, VIDEO_FILTER, "");
+            // mixes the user's top interests (searches + watched channels), minus watched videos
+            return InterestFeedHelper.loadFeed(requireContext(), serviceId, VIDEO_FILTER)
+                    .map(feed -> {
+                        activeQuery = feed.firstTopic;
+                        return feed.info;
                     });
         }
         activeQuery = query;
