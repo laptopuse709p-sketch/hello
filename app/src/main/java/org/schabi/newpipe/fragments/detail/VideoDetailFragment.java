@@ -2015,6 +2015,9 @@ public final class VideoDetailFragment
 
     @Override
     public void onFullscreenStateChanged(final boolean fullscreen) {
+        if (fullscreen) {
+            updateBottomNavForPlayer(1f); // no bottom bar over a fullscreen video
+        }
         resetImmersive();
         setupBrightness();
         if (!isPlayerAndPlayerServiceAvailable()
@@ -2760,6 +2763,12 @@ public final class VideoDetailFragment
             public void onStateChanged(@NonNull final View bottomSheet, final int newState) {
                 updateBottomSheetState(newState);
                 if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                    updateBottomNavForPlayer(1f);
+                } else if (newState == BottomSheetBehavior.STATE_COLLAPSED
+                        || newState == BottomSheetBehavior.STATE_HIDDEN) {
+                    updateBottomNavForPlayer(0f);
+                }
+                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                     bottomSheetBehavior.setDraggable(false);
                 } else if (newState == BottomSheetBehavior.STATE_COLLAPSED
                         || newState == BottomSheetBehavior.STATE_HIDDEN) {
@@ -2847,9 +2856,13 @@ public final class VideoDetailFragment
     /** Slides the bottom bar away while the player expands, and back when it shrinks. */
     private void updateBottomNavForPlayer(final float slideOffset) {
         final View nav = activity.findViewById(R.id.bottom_nav);
-        if (nav != null) {
-            nav.setTranslationY(Math.max(0f, Math.min(1f, slideOffset)) * nav.getHeight());
+        if (nav == null) {
+            return;
         }
+        final float offset = Math.max(0f, Math.min(1f, slideOffset));
+        nav.setTranslationY(offset * nav.getHeight());
+        // fully expanded (or fullscreen): the bar must not be visible at all
+        nav.setVisibility(offset >= 1f ? View.INVISIBLE : View.VISIBLE);
     }
 
     private void updateOverlayPlayQueueButtonVisibility() {
