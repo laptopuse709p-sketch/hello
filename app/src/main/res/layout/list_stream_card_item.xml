@@ -42,18 +42,42 @@
         app:layout_constraintRight_toRightOf="@id/itemThumbnailView"
         tools:text="1:09:10" />
 
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/itemUploaderAvatar"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="10dp"
+        android:contentDescription="@null"
+        android:src="@drawable/placeholder_person"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemThumbnailView"
+        app:shapeAppearance="@style/CircularImageView" />
+
+    <ImageView
+        android:id="@+id/itemMoreOptions"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/more_options"
+        android:padding="8dp"
+        android:src="@drawable/ic_more_vert"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemThumbnailView"
+        app:tint="?android:attr/textColorPrimary" />
+
     <org.schabi.newpipe.views.NewPipeTextView
         android:id="@+id/itemVideoTitleView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/margin_small"
+        android:layout_marginStart="10dp"
         android:layout_marginEnd="@dimen/margin_small"
         android:ellipsize="end"
         android:maxLines="2"
         android:layout_marginTop="@dimen/margin_small"
         android:textAppearance="?textAppearanceListItem"
-        app:layout_constraintEnd_toEndOf="@id/itemThumbnailView"
-        app:layout_constraintStart_toStartOf="@id/itemThumbnailView"
+        app:layout_constraintEnd_toStartOf="@id/itemMoreOptions"
+        app:layout_constraintStart_toEndOf="@id/itemUploaderAvatar"
         app:layout_constraintTop_toBottomOf="@id/itemThumbnailView"
         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tristique vitae sem vitae blanditLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum" />
 

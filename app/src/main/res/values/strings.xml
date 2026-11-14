@@ -917,4 +917,5 @@
     <string name="unlock_controls">Unlock screen</string>
     <string name="auto_quality_lowered">Slow connection: switched to %1$s</string>
     <string name="history_search_hint">Search watched videos</string>
+    <string name="pill_save">Save</string>
 </resources>

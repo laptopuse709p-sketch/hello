@@ -441,6 +441,10 @@ public final class VideoDetailFragment
     @Override
     public void onDestroyView() {
         resetImmersive();
+        if (subscribeMonitor != null) {
+            subscribeMonitor.dispose();
+            subscribeMonitor = null;
+        }
         super.onDestroyView();
         binding = null;
     }
@@ -1546,6 +1550,67 @@ public final class VideoDetailFragment
         binding.detailSubChannelThumbnailView.setImageBitmap(null);
     }
 
+    private org.schabi.newpipe.local.subscription.SubscriptionManager subscriptionManager;
+    private Disposable subscribeMonitor;
+
+    /** Subscribe / Subscribed pill next to the channel name (uses the local subscriptions). */
+    private void setupSubscribeButton(@NonNull final StreamInfo info) {
+        if (subscribeMonitor != null) {
+            subscribeMonitor.dispose();
+            subscribeMonitor = null;
+        }
+        if (binding == null || binding.detailSubscribeButton == null) {
+            return;
+        }
+        final android.widget.TextView button = binding.detailSubscribeButton;
+        final String channelUrl = info.getUploaderUrl();
+        if (channelUrl == null || channelUrl.isEmpty()) {
+            button.setVisibility(View.GONE);
+            return;
+        }
+        button.setVisibility(View.VISIBLE);
+        if (subscriptionManager == null) {
+            subscriptionManager = new org.schabi.newpipe.local.subscription
+                    .SubscriptionManager(requireContext());
+        }
+        subscribeMonitor = subscriptionManager.subscriptionTable()
+                .getSubscriptionFlowable(info.getServiceId(), channelUrl)
+                .toObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(subscriptions -> {
+                    if (binding == null || binding.detailSubscribeButton == null) {
+                        return;
+                    }
+                    final boolean subscribed = !subscriptions.isEmpty();
+                    button.setText(subscribed ? R.string.subscribed_button_title
+                            : R.string.subscribe_button_title);
+                    button.setBackgroundResource(subscribed
+                            ? R.drawable.bg_subscribed : R.drawable.bg_subscribe);
+                    button.setTextColor(subscribed
+                            ? ContextCompat.getColor(requireContext(), R.color.white)
+                            : Color.parseColor("#0F0F0F"));
+                    button.setOnClickListener(v -> disposables.add(
+                            io.reactivex.rxjava3.core.Completable.fromAction(() -> {
+                                if (subscribed) {
+                                    subscriptionManager.deleteSubscription(subscriptions.get(0));
+                                } else {
+                                    final org.schabi.newpipe.database.subscription
+                                            .SubscriptionEntity channel =
+                                            new org.schabi.newpipe.database.subscription
+                                                    .SubscriptionEntity();
+                                    channel.setServiceId(info.getServiceId());
+                                    channel.setUrl(channelUrl);
+                                    channel.setName(info.getUploaderName());
+                                    channel.setAvatarUrl(org.schabi.newpipe.util.image
+                                            .ImageStrategy.imageListToDbUrl(
+                                                    info.getUploaderAvatars()));
+                                    channel.setSubscriberCount(info.getUploaderSubscriberCount());
+                                    subscriptionManager.insertSubscription(channel);
+                                }
+                            }).subscribeOn(Schedulers.io()).subscribe(() -> { }, e -> { })));
+                }, throwable -> { /* the button just stays as it is */ });
+    }
+
     /** The skeleton comes from an include, so it has no binding field: look it up by id. */
     @Nullable
     private View detailSkeletonView() {
@@ -1566,6 +1631,7 @@ public final class VideoDetailFragment
 
         // warm the cache for the next likely videos so switching is instant
         StreamPrefetcher.prefetch(info.getServiceId(), info.getRelatedItems(), 2);
+        setupSubscribeButton(info);
 
         currentInfo = info;
         setInitialData(info.getServiceId(), info.getOriginalUrl(), info.getName(), playQueue);

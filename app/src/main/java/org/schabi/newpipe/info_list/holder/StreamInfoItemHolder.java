@@ -38,6 +38,9 @@ import org.schabi.newpipe.util.Localization;
 
 public class StreamInfoItemHolder extends StreamMiniInfoItemHolder {
     public final TextView itemAdditionalDetails;
+    // only present in the card layout (null in the other item layouts)
+    private final android.widget.ImageView itemUploaderAvatar;
+    private final android.view.View itemMoreOptions;
 
     public StreamInfoItemHolder(final InfoItemBuilder infoItemBuilder, final ViewGroup parent) {
         this(infoItemBuilder, R.layout.list_stream_item, parent);
@@ -47,6 +50,8 @@ public class StreamInfoItemHolder extends StreamMiniInfoItemHolder {
                                 final ViewGroup parent) {
         super(infoItemBuilder, layoutId, parent);
         itemAdditionalDetails = itemView.findViewById(R.id.itemAdditionalDetails);
+        itemUploaderAvatar = itemView.findViewById(R.id.itemUploaderAvatar);
+        itemMoreOptions = itemView.findViewById(R.id.itemMoreOptions);
     }
 
     @Override
@@ -60,6 +65,19 @@ public class StreamInfoItemHolder extends StreamMiniInfoItemHolder {
         final StreamInfoItem item = (StreamInfoItem) infoItem;
 
         itemAdditionalDetails.setText(getStreamInfoDetailLine(item));
+
+        if (itemUploaderAvatar != null) {
+            org.schabi.newpipe.util.image.CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatar,
+                    item.getUploaderAvatars());
+        }
+        if (itemMoreOptions != null) {
+            // the three-dot button opens the same menu as a long press
+            itemMoreOptions.setOnClickListener(v -> {
+                if (itemBuilder.getOnStreamSelectedListener() != null) {
+                    itemBuilder.getOnStreamSelectedListener().held(item);
+                }
+            });
+        }
     }
 
     private String getStreamInfoDetailLine(final StreamInfoItem infoItem) {
