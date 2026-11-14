@@ -2674,7 +2674,10 @@ public final class VideoDetailFragment
         bottomSheetBehavior.setDraggable(
                 lastStableBottomSheetState != BottomSheetBehavior.STATE_EXPANDED);
 
-        final int peekHeight = getResources().getDimensionPixelSize(R.dimen.mini_player_height);
+        // The mini player rests above the bottom bar, so the sheet peeks by both heights
+        final int peekHeight = getResources().getDimensionPixelSize(R.dimen.mini_player_height)
+                + getResources().getDimensionPixelSize(R.dimen.bottom_nav_height);
+        updateBottomNavForPlayer(bottomSheetState == BottomSheetBehavior.STATE_EXPANDED ? 1f : 0f);
         if (bottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
             manageSpaceAtTheBottom(false);
             bottomSheetBehavior.setPeekHeight(peekHeight);
@@ -2760,6 +2763,7 @@ public final class VideoDetailFragment
 
             @Override
             public void onSlide(@NonNull final View bottomSheet, final float slideOffset) {
+                updateBottomNavForPlayer(slideOffset);
                 setOverlayLook(binding.appBarLayout, behavior, slideOffset);
             }
         };
@@ -2772,6 +2776,14 @@ public final class VideoDetailFragment
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
         });
+    }
+
+    /** Slides the bottom bar away while the player expands, and back when it shrinks. */
+    private void updateBottomNavForPlayer(final float slideOffset) {
+        final View nav = activity.findViewById(R.id.bottom_nav);
+        if (nav != null) {
+            nav.setTranslationY(Math.max(0f, Math.min(1f, slideOffset)) * nav.getHeight());
+        }
     }
 
     private void updateOverlayPlayQueueButtonVisibility() {

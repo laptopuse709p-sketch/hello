@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import androidx.appcompat.widget.SearchView;
+import org.schabi.newpipe.info_list.ItemViewMode;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
@@ -57,6 +59,8 @@ public class StatisticsPlaylistFragment
     @State
     Parcelable itemsListState;
     private StatisticSortMode sortMode = StatisticSortMode.LAST_PLAYED;
+    private List<StreamStatisticsEntry> allResults = new ArrayList<>();
+    private String searchQuery = "";
 
     private StatisticPlaylistControlBinding headerBinding;
     private PlaylistControlBinding playlistControlBinding;
@@ -111,6 +115,69 @@ public class StatisticsPlaylistFragment
                                     @NonNull final MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.menu_history, menu);
+
+        final MenuItem searchItem = menu.findItem(R.id.action_history_search);
+        if (searchItem != null && searchItem.getActionView() instanceof SearchView) {
+            final SearchView searchView = (SearchView) searchItem.getActionView();
+            searchView.setQueryHint(getString(R.string.history_search_hint));
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(final String query) {
+                    searchView.clearFocus();
+                    return true;
+                }
+
+                @Override
+                public boolean onQueryTextChange(final String newText) {
+                    searchQuery = newText == null ? "" : newText.trim();
+                    displayResults();
+                    return true;
+                }
+            });
+            searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+                @Override
+                public boolean onMenuItemActionExpand(final MenuItem item) {
+                    return true;
+                }
+
+                @Override
+                public boolean onMenuItemActionCollapse(final MenuItem item) {
+                    searchQuery = "";
+                    displayResults();
+                    return true;
+                }
+            });
+        }
+    }
+
+    @Override
+    protected ItemViewMode getPreferredItemViewMode() {
+        return ItemViewMode.LIST; // History is always a compact list, never large cards
+    }
+
+    /** Shows the watched videos whose title or channel contains the search text. */
+    private void displayResults() {
+        if (itemListAdapter == null) {
+            return;
+        }
+        final String query = searchQuery.toLowerCase(java.util.Locale.ROOT);
+        final List<StreamStatisticsEntry> shown = new ArrayList<>();
+        for (final StreamStatisticsEntry entry : allResults) {
+            if (query.isEmpty()
+                    || contains(entry.getStreamEntity().getTitle(), query)
+                    || contains(entry.getStreamEntity().getUploader(), query)) {
+                shown.add(entry);
+            }
+        }
+        itemListAdapter.clearStreamItemList();
+        final List<StreamStatisticsEntry> sorted = processResult(shown);
+        if (sorted != null) {
+            itemListAdapter.addItems(sorted);
+        }
+    }
+
+    private static boolean contains(final String text, final String lowerQuery) {
+        return text != null && text.toLowerCase(java.util.Locale.ROOT).contains(lowerQuery);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -261,6 +328,7 @@ public class StatisticsPlaylistFragment
 
         playlistControlBinding.getRoot().setVisibility(View.VISIBLE);
 
+        allResults = new ArrayList<>(result);
         itemListAdapter.clearStreamItemList();
 
         if (result.isEmpty()) {
@@ -268,7 +336,7 @@ public class StatisticsPlaylistFragment
             return;
         }
 
-        itemListAdapter.addItems(processResult(result));
+        displayResults();
         if (itemsListState != null && itemsList.getLayoutManager() != null) {
             itemsList.getLayoutManager().onRestoreInstanceState(itemsListState);
             itemsListState = null;

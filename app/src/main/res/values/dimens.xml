@@ -87,6 +87,7 @@
     <dimen name="channel_avatar_size">70dp</dimen>
     <dimen name="sub_channel_avatar_size">35dp</dimen>
     <dimen name="mini_player_height">60dp</dimen>
+    <dimen name="bottom_nav_height">56dp</dimen>
     <!-- Paddings & Margins -->
     <dimen name="video_item_detail_pinned_right_margin">5dp</dimen>
     <dimen name="video_item_detail_like_margin">5dp</dimen>

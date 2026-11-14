@@ -86,11 +86,16 @@ public abstract class BaseLocalListFragment<I, N> extends BaseStateFragment<I>
         }
     }
 
+    /** The item style for this list; subclasses can force one (e.g. History uses a list). */
+    protected ItemViewMode getPreferredItemViewMode() {
+        return getItemViewMode(requireContext());
+    }
+
     /**
      * Updates the item view mode based on user preference.
      */
     private void refreshItemViewMode() {
-        final ItemViewMode itemViewMode = getItemViewMode(requireContext());
+        final ItemViewMode itemViewMode = getPreferredItemViewMode();
         itemsList.setLayoutManager((itemViewMode == ItemViewMode.GRID)
                 ? getGridLayoutManager() : getListLayoutManager());
         itemListAdapter.setItemViewMode(itemViewMode);
