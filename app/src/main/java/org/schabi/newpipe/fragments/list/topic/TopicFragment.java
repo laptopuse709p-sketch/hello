@@ -20,6 +20,7 @@ import org.schabi.newpipe.extractor.search.SearchInfo;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.InterestFeedHelper;
+import org.schabi.newpipe.util.NotInterestedHelper;
 import org.schabi.newpipe.util.StreamPrefetcher;
 
 import java.util.Collections;
@@ -70,25 +71,37 @@ public class TopicFragment extends BaseListInfoFragment<InfoItem, SearchInfo> {
 
     @Override
     public Single<SearchInfo> loadResult(final boolean forceReload) {
+        final android.content.Context appContext = requireContext().getApplicationContext();
+        final Single<SearchInfo> source;
         if (FOR_YOU.equals(query)) {
             // mixes the user's top interests (searches + watched channels), minus watched videos
-            return InterestFeedHelper.loadFeed(requireContext(), serviceId, VIDEO_FILTER)
+            source = InterestFeedHelper.loadFeed(appContext, serviceId, VIDEO_FILTER)
                     .map(feed -> {
                         activeQuery = feed.firstTopic;
                         return feed.info;
                     });
+        } else {
+            activeQuery = query;
+            source = ExtractorHelper.searchFor(serviceId, query, VIDEO_FILTER, "");
         }
-        activeQuery = query;
-        return ExtractorHelper.searchFor(serviceId, query, VIDEO_FILTER, "");
+        // drop videos/channels the user marked "Not interested"
+        return source.map(info -> {
+            info.setRelatedItems(NotInterestedHelper.filter(appContext, info.getRelatedItems()));
+            return info;
+        });
     }
 
     @Override
     public Single<ListExtractor.InfoItemsPage<InfoItem>> loadMoreItemsLogic() {
+        final android.content.Context appContext = requireContext().getApplicationContext();
         final String moreQuery = activeQuery == null || activeQuery.isEmpty()
                 ? (FOR_YOU.equals(query) ? InterestFeedHelper.FALLBACK_QUERY : query)
                 : activeQuery;
         return ExtractorHelper.getMoreSearchItems(serviceId, moreQuery, VIDEO_FILTER, "",
-                currentNextPage);
+                currentNextPage)
+                .map(page -> new ListExtractor.InfoItemsPage<InfoItem>(
+                        NotInterestedHelper.filter(appContext, page.getItems()),
+                        page.getNextPage(), page.getErrors()));
     }
 
     @Override

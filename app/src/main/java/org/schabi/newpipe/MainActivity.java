@@ -303,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
         mainBinding.bottomNav.setOnItemSelectedListener(item -> {
             final int id = item.getItemId();
             if (id == R.id.bottom_nav_home) {
-                NavigationHelper.openMainFragment(getSupportFragmentManager());
+                onHomeButtonTapped();
             } else if (id == R.id.bottom_nav_subscriptions) {
                 NavigationHelper.openFeedFragment(getSupportFragmentManager());
             } else if (id == R.id.bottom_nav_library) {
@@ -313,6 +313,26 @@ public class MainActivity extends AppCompatActivity {
             }
             return true;
         });
+        // tapping the already selected Home item again
+        mainBinding.bottomNav.setOnItemReselectedListener(item -> {
+            if (item.getItemId() == R.id.bottom_nav_home) {
+                onHomeButtonTapped();
+            }
+        });
+    }
+
+    /**
+     * Home button: from another page, go back to the same Home feed (no refresh);
+     * on Home itself, scroll to the top, or refresh when already at the top.
+     */
+    private void onHomeButtonTapped() {
+        final Fragment current = getSupportFragmentManager()
+                .findFragmentById(R.id.fragment_holder);
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).onHomeTabTapped();
+        } else {
+            NavigationHelper.gotoMainFragment(getSupportFragmentManager());
+        }
     }
 
     private boolean drawerItemSelected(final MenuItem item) {

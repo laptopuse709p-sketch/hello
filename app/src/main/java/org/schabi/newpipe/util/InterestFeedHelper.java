@@ -77,19 +77,24 @@ public final class InterestFeedHelper {
                 .<List<StreamEntity>>map(list -> list)
                 .onErrorReturnItem(Collections.emptyList());
 
-        return Single.zip(searches, watched, InterestFeedHelper::makePlan)
+        final Context appContext = context.getApplicationContext();
+        return Single.zip(searches, watched,
+                        (s, w) -> makePlan(appContext, s, w))
                 .subscribeOn(Schedulers.io())
-                .flatMap(plan -> fetch(serviceId, filter, plan));
+                .flatMap(plan -> fetch(appContext, serviceId, filter, plan));
     }
 
-    private static Plan makePlan(final List<String> searches, final List<StreamEntity> watched) {
+    private static Plan makePlan(final Context context, final List<String> searches,
+                                 final List<StreamEntity> watched) {
+        final Set<String> blockedNames = NotInterestedHelper.blockedChannelNames(context);
+        final List<String> blockedTitles = NotInterestedHelper.blockedTitles(context);
         final Map<String, Double> scores = new HashMap<>();
         final Map<String, String> display = new HashMap<>();
 
         // recent searches are the strongest signal
         for (int i = 0; i < searches.size(); i++) {
             final String text = searches.get(i) == null ? "" : searches.get(i).trim();
-            if (text.length() > 1) {
+            if (text.length() > 1 && !isBlockedTopic(text, blockedNames, blockedTitles)) {
                 add(scores, display, text, 4.0 / (1 + 0.25 * i));
             }
         }
@@ -100,7 +105,8 @@ public final class InterestFeedHelper {
             watchedUrls.add(stream.getUrl());
             final String uploader = stream.getUploader() == null
                     ? "" : stream.getUploader().trim();
-            if (uploader.length() > 1) {
+            if (uploader.length() > 1
+                    && !blockedNames.contains(uploader.toLowerCase(Locale.ROOT))) {
                 add(scores, display, uploader, 1.0 + 1.0 / (1 + 0.15 * i));
             }
         }
@@ -130,6 +136,23 @@ public final class InterestFeedHelper {
         return new Plan(topics, watchedUrls);
     }
 
+    /** A search interest is dropped if it is a hidden channel or appears in a hidden title. */
+    private static boolean isBlockedTopic(final String text, final Set<String> blockedNames,
+                                          final List<String> blockedTitles) {
+        final String lower = text.toLowerCase(Locale.ROOT);
+        if (blockedNames.contains(lower)) {
+            return true;
+        }
+        if (lower.length() >= 3) {
+            for (final String title : blockedTitles) {
+                if (title.contains(lower)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static void add(final Map<String, Double> scores, final Map<String, String> display,
                             final String text, final double score) {
         final String key = text.toLowerCase(Locale.ROOT);
@@ -138,8 +161,8 @@ public final class InterestFeedHelper {
     }
 
     @SuppressWarnings("unchecked")
-    private static Single<Feed> fetch(final int serviceId, final List<String> filter,
-                                      final Plan plan) {
+    private static Single<Feed> fetch(final Context context, final int serviceId,
+                                      final List<String> filter, final Plan plan) {
         final List<Single<Optional<SearchInfo>>> calls = new ArrayList<>();
         for (final String topic : plan.topics) {
             calls.add(ExtractorHelper.searchFor(serviceId, topic, filter, "")
@@ -163,6 +186,7 @@ public final class InterestFeedHelper {
                 for (final InfoItem item : result.get().getRelatedItems()) {
                     if (item instanceof StreamInfoItem
                             && !plan.watchedUrls.contains(item.getUrl())
+                            && !NotInterestedHelper.isHidden(context, item)
                             && usable.size() < ITEMS_PER_TOPIC) {
                         usable.add(item);
                     }

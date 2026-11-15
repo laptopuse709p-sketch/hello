@@ -918,4 +918,8 @@
     <string name="auto_quality_lowered">Slow connection: switched to %1$s</string>
     <string name="history_search_hint">Search watched videos</string>
     <string name="pill_save">Save</string>
+    <string name="not_interested">Not interested</string>
+    <string name="not_interested_done">Got it. We\'ll show less like this.</string>
+    <string name="reset_not_interested">Reset "Not interested"</string>
+    <string name="not_interested_reset_done">"Not interested" list cleared</string>
 </resources>

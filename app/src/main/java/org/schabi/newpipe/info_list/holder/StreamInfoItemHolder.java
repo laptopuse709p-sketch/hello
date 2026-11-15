@@ -71,11 +71,24 @@ public class StreamInfoItemHolder extends StreamMiniInfoItemHolder {
                     item.getUploaderAvatars());
         }
         if (itemMoreOptions != null) {
-            // the three-dot button opens the same menu as a long press
             itemMoreOptions.setOnClickListener(v -> {
-                if (itemBuilder.getOnStreamSelectedListener() != null) {
-                    itemBuilder.getOnStreamSelectedListener().held(item);
-                }
+                final androidx.appcompat.widget.PopupMenu popup =
+                        new androidx.appcompat.widget.PopupMenu(v.getContext(), v);
+                popup.getMenu().add(0, 1, 0, R.string.not_interested);
+                popup.getMenu().add(0, 2, 1, R.string.more_options);
+                popup.setOnMenuItemClickListener(menuItem -> {
+                    if (menuItem.getItemId() == 1) {
+                        markNotInterested(item);
+                    } else if (itemBuilder.getOnStreamSelectedListener() != null) {
+                        // the same menu as a long press
+                        itemBuilder.getOnStreamSelectedListener().held(item);
+                    }
+                    return true;
+                });
+                popup.show();
+            });
+        }
+    }
             });
         }
     }
@@ -107,5 +120,32 @@ public class StreamInfoItemHolder extends StreamMiniInfoItemHolder {
         }
 
         return viewsAndDate;
+    }
+
+    /** Hides this video and its channel from the list, with an Undo message. */
+    private void markNotInterested(final StreamInfoItem item) {
+        final android.content.Context context = itemView.getContext();
+        final androidx.recyclerview.widget.RecyclerView.Adapter<?> adapter = getBindingAdapter();
+        com.google.android.material.snackbar.Snackbar snackbar =
+                com.google.android.material.snackbar.Snackbar.make(itemView,
+                        R.string.not_interested_done,
+                        com.google.android.material.snackbar.Snackbar.LENGTH_LONG);
+        org.schabi.newpipe.util.NotInterestedHelper.add(context, item);
+        if (adapter instanceof org.schabi.newpipe.info_list.InfoListAdapter) {
+            final org.schabi.newpipe.info_list.InfoListAdapter listAdapter =
+                    (org.schabi.newpipe.info_list.InfoListAdapter) adapter;
+            final java.util.List<org.schabi.newpipe.extractor.InfoItem> before =
+                    new java.util.ArrayList<>(listAdapter.getItemsList());
+            snackbar = snackbar.setAction(R.string.undo, v -> {
+                org.schabi.newpipe.util.NotInterestedHelper.remove(context, item);
+                listAdapter.getItemsList().clear();
+                listAdapter.getItemsList().addAll(before);
+                listAdapter.notifyDataSetChanged();
+            });
+            listAdapter.getItemsList().removeIf(other ->
+                    org.schabi.newpipe.util.NotInterestedHelper.isHidden(context, other));
+            listAdapter.notifyDataSetChanged();
+        }
+        snackbar.show();
     }
 }

@@ -6,6 +6,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -14,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -22,6 +24,7 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.fragments.list.topic.TopicFragment;
 import org.schabi.newpipe.util.NavigationHelper;
+import org.schabi.newpipe.util.NotInterestedHelper;
 import org.schabi.newpipe.util.ServiceHelper;
 
 /**
@@ -84,19 +87,7 @@ public class HomeFragment extends BaseFragment {
             final RecyclerView list = rootView.findViewById(R.id.items_list);
             return list != null && list.canScrollVertically(-1);
         });
-        swipeRefresh.setOnRefreshListener(() -> {
-            final Fragment current = getChildFragmentManager()
-                    .findFragmentById(R.id.topic_holder);
-            if (current instanceof TopicFragment) {
-                ((TopicFragment) current).reloadContent(); // new interest, new videos
-            }
-            // the list shows its own loading state, so end the pull spinner shortly
-            swipeRefresh.postDelayed(() -> {
-                if (swipeRefresh != null) {
-                    swipeRefresh.setRefreshing(false);
-                }
-            }, 700);
-        });
+        swipeRefresh.setOnRefreshListener(this::refreshFeed);
 
         if (getChildFragmentManager().findFragmentById(R.id.topic_holder) == null) {
             showTopic(selectedTopic);
@@ -114,6 +105,42 @@ public class HomeFragment extends BaseFragment {
         super.onDestroyView();
         chipsContainer = null;
         swipeRefresh = null;
+    }
+
+    /** Loads new videos into the current feed (pull-to-refresh and Home tapped at the top). */
+    private void refreshFeed() {
+        final Fragment current = getChildFragmentManager().findFragmentById(R.id.topic_holder);
+        if (current instanceof TopicFragment) {
+            ((TopicFragment) current).reloadContent(); // new interest, new videos
+        }
+        if (swipeRefresh != null && swipeRefresh.isEnabled()) {
+            swipeRefresh.setRefreshing(true);
+            // the list shows its own loading state, so end the pull spinner shortly
+            swipeRefresh.postDelayed(() -> {
+                if (swipeRefresh != null) {
+                    swipeRefresh.setRefreshing(false);
+                }
+            }, 700);
+        }
+    }
+
+    /**
+     * The Home button was tapped while Home is on screen: scrolled down means go back to the
+     * top of the same feed (no refresh); already at the top means refresh the feed.
+     */
+    public void onHomeTabTapped() {
+        final View root = getView();
+        final RecyclerView list = root == null ? null : root.findViewById(R.id.items_list);
+        if (list != null && list.canScrollVertically(-1)) {
+            final RecyclerView.LayoutManager manager = list.getLayoutManager();
+            if (manager instanceof LinearLayoutManager
+                    && ((LinearLayoutManager) manager).findFirstVisibleItemPosition() > 8) {
+                list.scrollToPosition(8); // so a long list doesn't scroll for seconds
+            }
+            list.smoothScrollToPosition(0);
+        } else {
+            refreshFeed();
+        }
     }
 
     private View createChip(final int index) {
@@ -195,6 +222,12 @@ public class HomeFragment extends BaseFragment {
             } catch (final Exception e) {
                 ErrorUtil.showUiErrorSnackbar(this, "Opening search fragment", e);
             }
+            return true;
+        }
+        if (item.getItemId() == R.id.action_reset_not_interested) {
+            NotInterestedHelper.clear(requireContext());
+            Toast.makeText(requireContext(), R.string.not_interested_reset_done,
+                    Toast.LENGTH_SHORT).show();
             return true;
         }
         return super.onOptionsItemSelected(item);
