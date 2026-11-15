@@ -95,6 +95,35 @@ public class HomeFragment extends BaseFragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        // show the BSL logo instead of the text title
+        final ActionBar bar = activity == null ? null : activity.getSupportActionBar();
+        if (bar != null) {
+            final android.widget.ImageView logo = new android.widget.ImageView(requireContext());
+            logo.setImageResource(R.drawable.bsl_logo);
+            logo.setAdjustViewBounds(true);
+            logo.setLayoutParams(new ActionBar.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    (int) (32 * getResources().getDisplayMetrics().density),
+                    android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL));
+            bar.setCustomView(logo);
+            bar.setDisplayShowCustomEnabled(true);
+            bar.setDisplayShowTitleEnabled(false);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        final ActionBar bar = activity == null ? null : activity.getSupportActionBar();
+        if (bar != null) {
+            bar.setDisplayShowCustomEnabled(false);
+            bar.setCustomView(null);
+        }
+    }
+
+    @Override
     public void onSaveInstanceState(@NonNull final Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(STATE_SELECTED_TOPIC, selectedTopic);
