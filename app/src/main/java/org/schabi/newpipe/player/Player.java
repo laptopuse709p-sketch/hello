@@ -1271,6 +1271,16 @@ public final class Player implements PlaybackListener, Listener {
         return exoPlayerIsNull() ? REPEAT_MODE_OFF : simpleExoPlayer.getRepeatMode();
     }
 
+    /** Loop button: repeat the current video forever, or turn that off. */
+    public boolean toggleLoop() {
+        if (exoPlayerIsNull()) {
+            return false;
+        }
+        final boolean turnOn = simpleExoPlayer.getRepeatMode() != REPEAT_MODE_ONE;
+        simpleExoPlayer.setRepeatMode(turnOn ? REPEAT_MODE_ONE : REPEAT_MODE_OFF);
+        return turnOn;
+    }
+
     public void cycleNextRepeatMode() {
         if (!exoPlayerIsNull()) {
             @RepeatMode final int repeatMode;

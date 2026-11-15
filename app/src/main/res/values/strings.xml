@@ -922,4 +922,11 @@
     <string name="not_interested_done">Got it. We\'ll show less like this.</string>
     <string name="reset_not_interested">Reset "Not interested"</string>
     <string name="not_interested_reset_done">"Not interested" list cleared</string>
+    <string name="open_links_title">Open YouTube links in Pipe</string>
+    <string name="open_links_message">To open youtube.com and youtu.be links in Pipe, tap Open settings, then "Open by default" and "Add links", and turn on all links.</string>
+    <string name="open_links_action">Open settings</string>
+    <string name="later">Later</string>
+    <string name="loop_video">Loop video</string>
+    <string name="loop_on">Loop on</string>
+    <string name="loop_off">Loop off</string>
 </resources>

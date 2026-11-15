@@ -172,6 +172,11 @@ public class MainActivity extends AppCompatActivity {
                 .getHeaderView(0));
         toolbarLayoutBinding = mainBinding.toolbarLayout;
         setContentView(mainBinding.getRoot());
+        mainBinding.getRoot().post(() -> {
+            if (!isFinishing()) {
+                org.schabi.newpipe.util.LinkSettingsHelper.promptOnce(this);
+            }
+        });
 
         if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
             initFragments();

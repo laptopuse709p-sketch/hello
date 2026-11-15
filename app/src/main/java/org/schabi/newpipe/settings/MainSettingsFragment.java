@@ -20,6 +20,14 @@ public class MainSettingsFragment extends BasePreferenceFragment {
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
         addPreferencesFromResourceRegistry();
 
+        final androidx.preference.Preference openLinks = findPreference("open_links_pref");
+        if (openLinks != null) {
+            openLinks.setOnPreferenceClickListener(pref -> {
+                org.schabi.newpipe.util.LinkSettingsHelper.openSystemLinkSettings(requireContext());
+                return true;
+            });
+        }
+
         setHasOptionsMenu(true); // Otherwise onCreateOptionsMenu is not called
 
         // Check if the app is updatable

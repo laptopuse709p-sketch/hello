@@ -222,6 +222,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.getRoot().setOnTouchListener(playerGestureListener);
 
         binding.repeatButton.setOnClickListener(v -> onRepeatClicked());
+        binding.loopButton.setOnClickListener(v -> {
+            final boolean on = player.toggleLoop();
+            android.widget.Toast.makeText(context,
+                    on ? R.string.loop_on : R.string.loop_off,
+                    android.widget.Toast.LENGTH_SHORT).show();
+        });
+        binding.loopButton.setImageAlpha(
+                player.getRepeatMode() == REPEAT_MODE_ONE ? 255 : 100);
         binding.shuffleButton.setOnClickListener(v -> onShuffleClicked());
 
         binding.playPauseButton.setOnClickListener(makeOnClickListener(player::playPause));
@@ -998,6 +1006,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onRepeatModeChanged(@RepeatMode final int repeatMode) {
         super.onRepeatModeChanged(repeatMode);
+        binding.loopButton.setImageAlpha(repeatMode == REPEAT_MODE_ONE ? 255 : 100);
 
         if (repeatMode == REPEAT_MODE_ALL) {
             binding.repeatButton.setImageResource(

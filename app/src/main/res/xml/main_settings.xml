@@ -4,6 +4,12 @@
     android:key="general_preferences"
     android:title="@string/settings">
 
+    <Preference
+        android:key="open_links_pref"
+        android:icon="@drawable/ic_public"
+        android:title="@string/open_links_title"
+        app:iconSpaceReserved="false" />
+
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.VideoAudioSettingsFragment"
         android:icon="@drawable/ic_headset"
