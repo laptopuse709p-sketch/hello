@@ -89,9 +89,6 @@ public class StreamInfoItemHolder extends StreamMiniInfoItemHolder {
             });
         }
     }
-            });
-        }
-    }
 
     private String getStreamInfoDetailLine(final StreamInfoItem infoItem) {
         String viewsAndDate = "";
