@@ -416,20 +416,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupDrawerHeader() {
         drawerHeaderBinding.drawerHeaderActionButton.setOnClickListener(view -> toggleServices());
-
-        // If the current app name is bigger than the default "NewPipe" (7 chars),
-        // let the text view grow a little more as well.
-        if (getString(R.string.app_name).length() > "NewPipe".length()) {
-            final ViewGroup.LayoutParams layoutParams =
-                    drawerHeaderBinding.drawerHeaderNewpipeTitle.getLayoutParams();
-            layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-            drawerHeaderBinding.drawerHeaderNewpipeTitle.setLayoutParams(layoutParams);
-            drawerHeaderBinding.drawerHeaderNewpipeTitle.setMaxLines(2);
-            drawerHeaderBinding.drawerHeaderNewpipeTitle.setMinWidth(getResources()
-                    .getDimensionPixelSize(R.dimen.drawer_header_newpipe_title_default_width));
-            drawerHeaderBinding.drawerHeaderNewpipeTitle.setMaxWidth(getResources()
-                    .getDimensionPixelSize(R.dimen.drawer_header_newpipe_title_max_width));
-        }
     }
 
     private void toggleServices() {
