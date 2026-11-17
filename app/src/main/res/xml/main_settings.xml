@@ -4,6 +4,15 @@
     android:key="general_preferences"
     android:title="@string/settings">
 
+    <SeekBarPreference
+        android:key="home_logo_height"
+        android:defaultValue="22"
+        android:max="40"
+        android:title="@string/home_logo_size"
+        app:iconSpaceReserved="false"
+        app:min="12"
+        app:showSeekBarValue="true" />
+
     <Preference
         android:key="open_links_pref"
         android:icon="@drawable/ic_public"

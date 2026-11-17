@@ -105,7 +105,10 @@ public class HomeFragment extends BaseFragment {
             logo.setAdjustViewBounds(true);
             logo.setLayoutParams(new ActionBar.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    (int) (32 * getResources().getDisplayMetrics().density),
+                    (int) (androidx.preference.PreferenceManager
+                            .getDefaultSharedPreferences(requireContext())
+                            .getInt("home_logo_height", 22)
+                            * getResources().getDisplayMetrics().density),
                     android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL));
             bar.setCustomView(logo);
             bar.setDisplayShowCustomEnabled(true);
