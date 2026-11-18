@@ -110,7 +110,7 @@ public class HomeFragment extends BaseFragment {
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     (int) (28 * density),
                     android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
-            params.setMarginStart((int) (16 * density));
+            params.setMarginStart(0); // the menu icon already leaves the gap
             logo.setLayoutParams(params);
 
             bar.setCustomView(logo, params);
