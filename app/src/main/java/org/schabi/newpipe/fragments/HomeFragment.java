@@ -102,7 +102,7 @@ public class HomeFragment extends BaseFragment {
         if (bar != null) {
             final float density = getResources().getDisplayMetrics().density;
             final android.widget.ImageView logo = new android.widget.ImageView(requireContext());
-            logo.setImageResource(R.drawable.bsl_logo);
+            logo.setImageResource(R.drawable.youtube);
             logo.setAdjustViewBounds(true);
             logo.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
 
