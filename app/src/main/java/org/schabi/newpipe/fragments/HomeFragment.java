@@ -100,32 +100,22 @@ public class HomeFragment extends BaseFragment {
         // show the BSL logo instead of the text title
         final ActionBar bar = activity == null ? null : activity.getSupportActionBar();
         if (bar != null) {
+            final float density = getResources().getDisplayMetrics().density;
             final android.widget.ImageView logo = new android.widget.ImageView(requireContext());
-            logo.setImageResource(R.drawable.youtube);
+            logo.setImageResource(R.drawable.bsl_logo);
             logo.setAdjustViewBounds(true);
-            logo.setLayoutParams(new ActionBar.LayoutParams(
+            logo.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+
+            final ActionBar.LayoutParams params = new ActionBar.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                   final android.widget.ImageView logo =
-        new android.widget.ImageView(requireContext());
+                    (int) (28 * density),
+                    android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+            params.setMarginStart((int) (16 * density));
+            logo.setLayoutParams(params);
 
-logo.setImageResource(R.drawable.youtube);
-logo.setAdjustViewBounds(true);
-logo.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-
-int height = (int) (32 * getResources()
-        .getDisplayMetrics().density);
-
-ActionBar.LayoutParams params = new ActionBar.LayoutParams(
-        ViewGroup.LayoutParams.WRAP_CONTENT,
-        height,
-        android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL
-);
-
-logo.setLayoutParams(params);
-
-bar.setCustomView(logo, params);
-bar.setDisplayShowCustomEnabled(true);
-bar.setDisplayShowTitleEnabled(false);
+            bar.setCustomView(logo, params);
+            bar.setDisplayShowCustomEnabled(true);
+            bar.setDisplayShowTitleEnabled(false);
         }
     }
 
