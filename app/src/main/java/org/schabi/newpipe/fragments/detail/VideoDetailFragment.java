@@ -737,12 +737,15 @@ public final class VideoDetailFragment
 
         // If we are in fullscreen mode just exit from it via first back press
         if (isFullscreen()) {
-            if (!DeviceUtils.isTablet(activity)) {
-                player.pause();
-            }
+            // keep playing: the next Back press shrinks the video into the mini player
             restoreDefaultOrientation();
-            setAutoPlay(false);
             return true;
+        }
+
+        // Back while a video is open: shrink it into the mini player and keep it playing
+        // (MainActivity collapses the sheet when false is returned)
+        if (isPlayerAvailable()) {
+            return false;
         }
 
         // If we have something in history of played items we replay it here
