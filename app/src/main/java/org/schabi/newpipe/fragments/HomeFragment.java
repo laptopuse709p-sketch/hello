@@ -105,11 +105,27 @@ public class HomeFragment extends BaseFragment {
             logo.setAdjustViewBounds(true);
             logo.setLayoutParams(new ActionBar.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    (int) (20 * getResources().getDisplayMetrics().density),
-                    android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL));
-            bar.setCustomView(logo);
-            bar.setDisplayShowCustomEnabled(true);
-            bar.setDisplayShowTitleEnabled(false);
+                   final android.widget.ImageView logo =
+        new android.widget.ImageView(requireContext());
+
+logo.setImageResource(R.drawable.youtube);
+logo.setAdjustViewBounds(true);
+logo.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+
+int height = (int) (32 * getResources()
+        .getDisplayMetrics().density);
+
+ActionBar.LayoutParams params = new ActionBar.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        height,
+        android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL
+);
+
+logo.setLayoutParams(params);
+
+bar.setCustomView(logo, params);
+bar.setDisplayShowCustomEnabled(true);
+bar.setDisplayShowTitleEnabled(false);
         }
     }
 
