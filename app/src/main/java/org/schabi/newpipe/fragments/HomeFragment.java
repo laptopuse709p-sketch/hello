@@ -100,20 +100,14 @@ public class HomeFragment extends BaseFragment {
         // show the BSL logo instead of the text title
         final ActionBar bar = activity == null ? null : activity.getSupportActionBar();
         if (bar != null) {
-            final float density = getResources().getDisplayMetrics().density;
             final android.widget.ImageView logo = new android.widget.ImageView(requireContext());
             logo.setImageResource(R.drawable.youtube);
             logo.setAdjustViewBounds(true);
-            logo.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-
-            final ActionBar.LayoutParams params = new ActionBar.LayoutParams(
+            logo.setLayoutParams(new ActionBar.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    (int) (28 * density),
-                    android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
-            params.setMarginStart(0); // the menu icon already leaves the gap
-            logo.setLayoutParams(params);
-
-            bar.setCustomView(logo, params);
+                    (int) (28 * getResources().getDisplayMetrics().density),
+                    android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL));
+            bar.setCustomView(logo);
             bar.setDisplayShowCustomEnabled(true);
             bar.setDisplayShowTitleEnabled(false);
         }
