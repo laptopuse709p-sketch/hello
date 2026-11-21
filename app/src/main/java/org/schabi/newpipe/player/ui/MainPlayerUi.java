@@ -967,6 +967,21 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.fullscreenLockOverlay.postDelayed(hideUnlockIcon, 2500);
     }
 
+    /** A tap while locked: the unlock icon unlocks, anywhere else shows the icon. */
+    public void handleLockedTap(final float rawX, final float rawY) {
+        if (!controlsLocked) {
+            return;
+        }
+        final android.graphics.Rect rect = new android.graphics.Rect();
+        if (binding.unlockButton.getVisibility() == View.VISIBLE
+                && binding.unlockButton.getGlobalVisibleRect(rect)
+                && rect.contains((int) rawX, (int) rawY)) {
+            setControlsLocked(false);
+        } else {
+            showUnlockIconTemporarily();
+        }
+    }
+
     private void unlockSilently() {
         controlsLocked = false;
         CustomBottomSheetBehavior.touchLocked = false;

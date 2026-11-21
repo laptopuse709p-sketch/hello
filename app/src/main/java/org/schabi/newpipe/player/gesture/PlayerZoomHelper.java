@@ -6,6 +6,8 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewConfiguration;
 
+import org.schabi.newpipe.views.ExpandableSurfaceView;
+
 import androidx.annotation.NonNull;
 
 import java.util.function.BooleanSupplier;
@@ -17,7 +19,7 @@ import java.util.function.BooleanSupplier;
 public final class PlayerZoomHelper {
     private static final float MAX_SCALE = 4f;
 
-    private final View target;
+    private final ExpandableSurfaceView target;
     private final BooleanSupplier allowed;
     private final ScaleGestureDetector detector;
     private final int touchSlop;
@@ -30,7 +32,7 @@ public final class PlayerZoomHelper {
     private boolean panning;
     private boolean multiTouchGesture;
 
-    public PlayerZoomHelper(@NonNull final Context context, @NonNull final View target,
+    public PlayerZoomHelper(@NonNull final Context context, @NonNull final ExpandableSurfaceView target,
                             @NonNull final BooleanSupplier allowed) {
         this.target = target;
         this.allowed = allowed;
@@ -106,8 +108,7 @@ public final class PlayerZoomHelper {
         final float maxY = (scale - 1f) * target.getHeight() / 2f;
         tx = Math.max(-maxX, Math.min(maxX, tx));
         ty = Math.max(-maxY, Math.min(maxY, ty));
-        target.setScaleX(scale);
-        target.setScaleY(scale);
+        target.setUserZoom(scale);
         target.setTranslationX(tx);
         target.setTranslationY(ty);
         CustomBottomSheetBehavior.zoomed = isZoomed();
@@ -120,8 +121,7 @@ public final class PlayerZoomHelper {
         ty = 0f;
         panning = false;
         multiTouchGesture = false;
-        target.setScaleX(1f);
-        target.setScaleY(1f);
+        target.setUserZoom(1f);
         target.setTranslationX(0f);
         target.setTranslationY(0f);
         CustomBottomSheetBehavior.zoomed = false;

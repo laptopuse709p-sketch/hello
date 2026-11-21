@@ -2416,8 +2416,21 @@ public final class VideoDetailFragment
         ((ImmersiveDragLayout) root).setListener(new ImmersiveDragLayout.Listener() {
             @Override
             public boolean isTouchLocked() {
-                // locked, or zoomed in (one finger then moves the picture, not the page)
-                return isPlayerLocked() || CustomBottomSheetBehavior.zoomed;
+                return isPlayerLocked();
+            }
+
+            @Override
+            public boolean isZoomed() {
+                // one finger then moves the picture, not the page
+                return CustomBottomSheetBehavior.zoomed;
+            }
+
+            @Override
+            public void onLockedTap(final float rawX, final float rawY) {
+                if (isPlayerAvailable()) {
+                    player.UIs().get(MainPlayerUi.class)
+                            .ifPresent(ui -> ui.handleLockedTap(rawX, rawY));
+                }
             }
 
             @Override

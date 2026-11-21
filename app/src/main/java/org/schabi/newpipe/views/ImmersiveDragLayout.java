@@ -21,8 +21,14 @@ public class ImmersiveDragLayout extends FrameLayout {
     public interface Listener {
         boolean isImmersive();
 
-        /** While true, every touch is ignored (the player is locked). */
+        /** While true, every touch is swallowed here (the player is locked). */
         boolean isTouchLocked();
+
+        /** The video is zoomed in: one finger moves the picture, so no page drags. */
+        boolean isZoomed();
+
+        /** A tap while locked (raw screen coordinates): show or use the unlock icon. */
+        void onLockedTap(float rawX, float rawY);
 
         boolean canStartEnterDrag(float rawX, float rawY);
 
@@ -64,7 +70,14 @@ public class ImmersiveDragLayout extends FrameLayout {
 
     @Override
     public boolean onInterceptTouchEvent(final MotionEvent ev) {
-        if (listener == null || listener.isTouchLocked()) {
+        if (listener == null) {
+            return false;
+        }
+        if (listener.isTouchLocked()) {
+            dragging = false;
+            return true; // nothing underneath (page, header, sheet) may see the touch
+        }
+        if (listener.isZoomed()) {
             dragging = false;
             return false;
         }
@@ -102,6 +115,20 @@ public class ImmersiveDragLayout extends FrameLayout {
         }
         if (listener.isTouchLocked()) {
             dragging = false;
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downX = ev.getX();
+                    downY = ev.getY();
+                    break;
+                case MotionEvent.ACTION_UP:
+                    if (Math.abs(ev.getX() - downX) < touchSlop
+                            && Math.abs(ev.getY() - downY) < touchSlop) {
+                        listener.onLockedTap(ev.getRawX(), ev.getRawY());
+                    }
+                    break;
+                default:
+                    break;
+            }
             return true; // swallow everything while locked
         }
         track(ev);

@@ -16,6 +16,8 @@ public class ExpandableSurfaceView extends SurfaceView {
     private float videoAspectRatio = 0.0f;
     private float scaleX = 1.0f;
     private float scaleY = 1.0f;
+    /** Pinch zoom set by the user; kept on top of the resize-mode scale. */
+    private float userZoom = 1.0f;
 
     public ExpandableSurfaceView(final Context context, final AttributeSet attrs) {
         super(context, attrs);
@@ -68,8 +70,15 @@ public class ExpandableSurfaceView extends SurfaceView {
     @Override
     protected void onLayout(final boolean changed,
                             final int left, final int top, final int right, final int bottom) {
-        setScaleX(scaleX);
-        setScaleY(scaleY);
+        setScaleX(scaleX * userZoom);
+        setScaleY(scaleY * userZoom);
+    }
+
+    /** Pinch zoom factor (1 = normal). Survives every layout pass. */
+    public void setUserZoom(final float zoom) {
+        userZoom = zoom;
+        setScaleX(scaleX * userZoom);
+        setScaleY(scaleY * userZoom);
     }
 
     /**
