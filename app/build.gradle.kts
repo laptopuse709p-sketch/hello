@@ -57,6 +57,16 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Same debug key on every build, so a new APK installs over the old one (no uninstall).
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("pipe-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
