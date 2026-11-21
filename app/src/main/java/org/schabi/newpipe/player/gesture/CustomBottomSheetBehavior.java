@@ -26,6 +26,10 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
 
     /** True while the fullscreen/immersive lock is on: the sheet must not react to any drag. */
     public static volatile boolean touchLocked = false;
+    /** Pinch zoom is available (fullscreen or immersive, not locked): two fingers are for zoom. */
+    public static volatile boolean pinchEnabled = false;
+    /** The video is zoomed in: one finger moves the picture, so the sheet must not drag. */
+    public static volatile boolean zoomed = false;
 
     Rect globalRect = new Rect();
     private boolean skippingInterception = false;
@@ -38,8 +42,8 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     public boolean onInterceptTouchEvent(@NonNull final CoordinatorLayout parent,
                                          @NonNull final FrameLayout child,
                                          @NonNull final MotionEvent event) {
-        if (touchLocked) {
-            return false; // locked: let the lock overlay swallow the touch
+        if (touchLocked || zoomed || (pinchEnabled && event.getPointerCount() > 1)) {
+            return false; // locked or zooming: let the player handle the touch
         }
 
         // Drop following when action ends

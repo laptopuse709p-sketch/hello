@@ -32,6 +32,11 @@ class MainPlayerGestureListener(
     private var isMoving = false
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
+        // pinch zoom and moving the zoomed picture (fullscreen and immersive view only)
+        if (playerUi.handleZoomTouch(event)) {
+            v.parent?.requestDisallowInterceptTouchEvent(true)
+            return true
+        }
         super.onTouch(v, event)
         if (event.action == MotionEvent.ACTION_UP && isMoving) {
             isMoving = false

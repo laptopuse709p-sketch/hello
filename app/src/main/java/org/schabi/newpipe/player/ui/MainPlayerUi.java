@@ -27,6 +27,7 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -58,6 +59,7 @@ import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
+import org.schabi.newpipe.player.gesture.PlayerZoomHelper;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
@@ -251,6 +253,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void destroyPlayer() {
         CustomBottomSheetBehavior.touchLocked = false;
+        CustomBottomSheetBehavior.pinchEnabled = false;
+        CustomBottomSheetBehavior.zoomed = false;
+        zoomHelper = null;
         super.destroyPlayer();
 
         if (playQueueAdapter != null) {
@@ -896,10 +901,35 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     };
 
     private boolean immersiveMode = false;
+    private PlayerZoomHelper zoomHelper;
+
+    private boolean isZoomAllowed() {
+        return (isFullscreen || immersiveMode) && !controlsLocked;
+    }
+
+    private void updateZoomFlags() {
+        CustomBottomSheetBehavior.pinchEnabled = isZoomAllowed();
+    }
+
+    private void resetZoom() {
+        if (zoomHelper != null) {
+            zoomHelper.reset();
+        }
+        updateZoomFlags();
+    }
+
+    /** Used by the touch listener: true if pinch zoom or panning used the event. */
+    public boolean handleZoomTouch(final MotionEvent event) {
+        if (zoomHelper == null) {
+            zoomHelper = new PlayerZoomHelper(context, binding.surfaceView, this::isZoomAllowed);
+        }
+        return zoomHelper.onTouch(event);
+    }
 
     /** The immersive view also has a lock button; leaving it always unlocks. */
     public void setImmersiveMode(final boolean on) {
         immersiveMode = on;
+        resetZoom();
         if (!on && !isFullscreen) {
             unlockSilently();
         }
@@ -915,6 +945,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     public void setControlsLocked(final boolean locked) {
         controlsLocked = locked;
         CustomBottomSheetBehavior.touchLocked = locked;
+        updateZoomFlags();
         binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
         binding.unlockButton.setVisibility(View.GONE);
         if (locked) {
@@ -939,6 +970,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private void unlockSilently() {
         controlsLocked = false;
         CustomBottomSheetBehavior.touchLocked = false;
+        updateZoomFlags();
         binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
         binding.fullscreenLockOverlay.setVisibility(View.GONE);
         binding.unlockButton.setVisibility(View.GONE);
@@ -973,6 +1005,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
         super.onVideoSizeChanged(videoSize);
+        resetZoom(); // a new video starts at normal size
         isVerticalVideo = videoSize.width < videoSize.height;
 
         if (globalScreenOrientationLocked(context)
@@ -999,6 +1032,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
 
         isFullscreen = !isFullscreen;
+        resetZoom();
         if (isFullscreen) {
             // Android needs tens milliseconds to send new insets but a user is able to see
             // how controls changes it's position from `0` to `nav bar height` padding.

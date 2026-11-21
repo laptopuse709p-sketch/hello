@@ -106,6 +106,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
+import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 import org.schabi.newpipe.views.ImmersiveDragLayout;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -2415,7 +2416,8 @@ public final class VideoDetailFragment
         ((ImmersiveDragLayout) root).setListener(new ImmersiveDragLayout.Listener() {
             @Override
             public boolean isTouchLocked() {
-                return isPlayerLocked();
+                // locked, or zoomed in (one finger then moves the picture, not the page)
+                return isPlayerLocked() || CustomBottomSheetBehavior.zoomed;
             }
 
             @Override
