@@ -137,6 +137,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     // these represents the last search
     @State
     String lastSearchedString;
+    /** The query we retried automatically, so an empty retry doesn't loop. */
+    private String autoRetryTarget;
 
     @State
     String searchSuggestion;
@@ -1087,12 +1089,55 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 infoListAdapter.addInfoItemList(result.getRelatedItems());
             } else {
                 infoListAdapter.clearStreamItemList();
+                final String retry = pickAutoRetryQuery();
+                if (retry != null && searchEditText != null) {
+                    autoRetryTarget = retry;
+                    android.widget.Toast.makeText(requireContext(),
+                            getString(R.string.search_auto_retry, retry),
+                            android.widget.Toast.LENGTH_LONG).show();
+                    search(retry, contentFilter, sortFilter);
+                    searchEditText.setText(retry);
+                    return;
+                }
                 showEmptyState();
                 return;
             }
         }
 
         super.handleResult(result);
+    }
+
+    private static final java.util.Set<String> FILLER_WORDS = new java.util.HashSet<>(
+            java.util.Arrays.asList("how", "to", "use", "using", "as", "a", "an", "the", "of",
+                    "for", "in", "on", "with", "and", "or", "make", "can", "i", "do", "does",
+                    "is", "are", "what", "why", "my", "your", "me", "it", "by", "at", "into",
+                    "from", "this", "that", "please", "way", "ways"));
+
+    /**
+     * When nothing was found, choose one automatic second try: the spelling YouTube suggests,
+     * otherwise the same words without filler like "how to use as a". Only once per search.
+     */
+    @Nullable
+    private String pickAutoRetryQuery() {
+        final String original = searchString == null ? "" : searchString.trim();
+        if (original.isEmpty() || original.equalsIgnoreCase(autoRetryTarget)) {
+            return null; // already retried, don't loop
+        }
+        if (!TextUtils.isEmpty(searchSuggestion)
+                && !searchSuggestion.equalsIgnoreCase(original)) {
+            return searchSuggestion;
+        }
+        final StringBuilder kept = new StringBuilder();
+        for (final String word : original.split("\\s+")) {
+            if (!FILLER_WORDS.contains(word.toLowerCase(java.util.Locale.ROOT))) {
+                kept.append(kept.length() == 0 ? "" : " ").append(word);
+            }
+        }
+        final String simplified = kept.toString();
+        if (simplified.length() < 2 || simplified.equalsIgnoreCase(original)) {
+            return null;
+        }
+        return simplified;
     }
 
     private void handleSearchSuggestion() {

@@ -929,4 +929,5 @@
     <string name="loop_video">Loop video</string>
     <string name="loop_on">Loop on</string>
     <string name="loop_off">Loop off</string>
+    <string name="search_auto_retry">Nothing found. Showing results for \"%s\"</string>
 </resources>
