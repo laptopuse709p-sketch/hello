@@ -930,4 +930,5 @@
     <string name="loop_on">Loop on</string>
     <string name="loop_off">Loop off</string>
     <string name="search_auto_retry">Nothing found. Showing results for \"%s\"</string>
+    <string name="search_auto_retry_line">Showing results for %1$s. Search instead for %2$s</string>
 </resources>

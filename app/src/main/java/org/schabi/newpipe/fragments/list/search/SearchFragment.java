@@ -139,6 +139,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     String lastSearchedString;
     /** The query we retried automatically, so an empty retry doesn't loop. */
     private String autoRetryTarget;
+    /** What the user originally typed, so they can go back to it. */
+    private String autoRetryOriginal;
 
     @State
     String searchSuggestion;
@@ -1091,6 +1093,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 infoListAdapter.clearStreamItemList();
                 final String retry = pickAutoRetryQuery();
                 if (retry != null && searchEditText != null) {
+                    autoRetryOriginal = searchString;
                     autoRetryTarget = retry;
                     android.widget.Toast.makeText(requireContext(),
                             getString(R.string.search_auto_retry, retry),
@@ -1141,6 +1144,25 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     }
 
     private void handleSearchSuggestion() {
+        // after an automatic retry: show what we searched and let the user go back
+        if (autoRetryOriginal != null && searchString != null
+                && searchString.equalsIgnoreCase(autoRetryTarget)) {
+            final String original = autoRetryOriginal;
+            final String text = String.format(getString(R.string.search_auto_retry_line),
+                    "<b><i>" + Html.escapeHtml(searchString) + "</i></b>",
+                    "<b><i>" + Html.escapeHtml(original) + "</i></b>");
+            searchBinding.correctSuggestion.setText(HtmlCompat.fromHtml(text,
+                    HtmlCompat.FROM_HTML_MODE_LEGACY));
+            searchBinding.correctSuggestion.setOnClickListener(v -> {
+                searchBinding.correctSuggestion.setVisibility(View.GONE);
+                autoRetryTarget = original; // searching the original again must not retry
+                search(original, contentFilter, sortFilter);
+                searchEditText.setText(original);
+            });
+            searchBinding.correctSuggestion.setOnLongClickListener(null);
+            searchBinding.correctSuggestion.setVisibility(View.VISIBLE);
+            return;
+        }
         if (TextUtils.isEmpty(searchSuggestion)) {
             searchBinding.correctSuggestion.setVisibility(View.GONE);
         } else {
