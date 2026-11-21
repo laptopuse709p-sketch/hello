@@ -21,6 +21,9 @@ public class ImmersiveDragLayout extends FrameLayout {
     public interface Listener {
         boolean isImmersive();
 
+        /** While true, every touch is ignored (the player is locked). */
+        boolean isTouchLocked();
+
         boolean canStartEnterDrag(float rawX, float rawY);
 
         void onDragStart(boolean entering);
@@ -61,7 +64,8 @@ public class ImmersiveDragLayout extends FrameLayout {
 
     @Override
     public boolean onInterceptTouchEvent(final MotionEvent ev) {
-        if (listener == null) {
+        if (listener == null || listener.isTouchLocked()) {
+            dragging = false;
             return false;
         }
         track(ev);
@@ -95,6 +99,10 @@ public class ImmersiveDragLayout extends FrameLayout {
     public boolean onTouchEvent(final MotionEvent ev) {
         if (listener == null) {
             return super.onTouchEvent(ev);
+        }
+        if (listener.isTouchLocked()) {
+            dragging = false;
+            return true; // swallow everything while locked
         }
         track(ev);
         switch (ev.getActionMasked()) {

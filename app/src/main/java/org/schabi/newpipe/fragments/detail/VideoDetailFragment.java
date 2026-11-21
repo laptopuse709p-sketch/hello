@@ -719,20 +719,17 @@ public final class VideoDetailFragment
             Log.d(TAG, "onBackPressed() called");
         }
 
+        // Locked (fullscreen or immersive): Back only shows the unlock icon
+        if (isPlayerLocked()) {
+            player.UIs().get(MainPlayerUi.class)
+                    .ifPresent(MainPlayerUi::showUnlockIconTemporarily);
+            return true;
+        }
+
         // Leave the immersive view first
         if (immersive) {
             animateImmersiveTo(0f);
             return true;
-        }
-
-        // Locked fullscreen: Back only shows the unlock icon
-        if (isFullscreen() && isPlayerAvailable()) {
-            final Optional<MainPlayerUi> lockedUi = player.UIs().get(MainPlayerUi.class)
-                    .filter(MainPlayerUi::isControlsLocked);
-            if (lockedUi.isPresent()) {
-                lockedUi.get().showUnlockIconTemporarily();
-                return true;
-            }
         }
 
         // If we are in fullscreen mode just exit from it via first back press
@@ -2417,6 +2414,11 @@ public final class VideoDetailFragment
         }
         ((ImmersiveDragLayout) root).setListener(new ImmersiveDragLayout.Listener() {
             @Override
+            public boolean isTouchLocked() {
+                return isPlayerLocked();
+            }
+
+            @Override
             public boolean isImmersive() {
                 return immersive;
             }
@@ -2464,6 +2466,11 @@ public final class VideoDetailFragment
                 animateImmersiveTo(goImmersive ? 1f : 0f);
             }
         });
+    }
+
+    private boolean isPlayerLocked() {
+        return isPlayerAvailable() && player.UIs().get(MainPlayerUi.class)
+                .map(MainPlayerUi::isControlsLocked).orElse(false);
     }
 
     private boolean canEnterImmersive(final float rawX, final float rawY) {
@@ -2623,6 +2630,7 @@ public final class VideoDetailFragment
             if (isPlayerAvailable()) {
                 player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
                     ui.getBinding().metadataView.setVisibility(View.VISIBLE);
+                    ui.setImmersiveMode(true);
                     ui.showControlsThenHide();
                 });
             }
@@ -2645,9 +2653,11 @@ public final class VideoDetailFragment
             binding.detailThumbnailImageView.setAlpha(1f);
             setImmersiveBackgrounds(false);
             if (isPlayerAvailable()) {
-                player.UIs().get(MainPlayerUi.class).ifPresent(ui ->
-                        ui.getBinding().metadataView.setVisibility(
-                                ui.isFullscreen() ? View.VISIBLE : View.GONE));
+                player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
+                    ui.setImmersiveMode(false);
+                    ui.getBinding().metadataView.setVisibility(
+                            ui.isFullscreen() ? View.VISIBLE : View.GONE);
+                });
             }
             setHeightThumbnail();
         }

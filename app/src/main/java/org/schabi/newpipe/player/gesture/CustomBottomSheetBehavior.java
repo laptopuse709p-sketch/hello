@@ -24,6 +24,9 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         super(context, attrs);
     }
 
+    /** True while the fullscreen/immersive lock is on: the sheet must not react to any drag. */
+    public static volatile boolean touchLocked = false;
+
     Rect globalRect = new Rect();
     private boolean skippingInterception = false;
     private final List<Integer> skipInterceptionOfElements = List.of(
@@ -35,6 +38,10 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     public boolean onInterceptTouchEvent(@NonNull final CoordinatorLayout parent,
                                          @NonNull final FrameLayout child,
                                          @NonNull final MotionEvent event) {
+        if (touchLocked) {
+            return false; // locked: let the lock overlay swallow the touch
+        }
+
         // Drop following when action ends
         if (event.getAction() == MotionEvent.ACTION_CANCEL
                 || event.getAction() == MotionEvent.ACTION_UP) {

@@ -57,6 +57,7 @@ import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
+import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
@@ -249,6 +250,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void destroyPlayer() {
+        CustomBottomSheetBehavior.touchLocked = false;
         super.destroyPlayer();
 
         if (playQueueAdapter != null) {
@@ -893,6 +895,18 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
     };
 
+    private boolean immersiveMode = false;
+
+    /** The immersive view also has a lock button; leaving it always unlocks. */
+    public void setImmersiveMode(final boolean on) {
+        immersiveMode = on;
+        if (!on && !isFullscreen) {
+            unlockSilently();
+        }
+        binding.lockButton.setVisibility(isFullscreen || immersiveMode
+                ? View.VISIBLE : View.GONE);
+    }
+
     public boolean isControlsLocked() {
         return controlsLocked;
     }
@@ -900,6 +914,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     /** Locks or unlocks the screen: while locked every touch is ignored, video keeps playing. */
     public void setControlsLocked(final boolean locked) {
         controlsLocked = locked;
+        CustomBottomSheetBehavior.touchLocked = locked;
         binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
         binding.unlockButton.setVisibility(View.GONE);
         if (locked) {
@@ -923,6 +938,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private void unlockSilently() {
         controlsLocked = false;
+        CustomBottomSheetBehavior.touchLocked = false;
         binding.fullscreenLockOverlay.removeCallbacks(hideUnlockIcon);
         binding.fullscreenLockOverlay.setVisibility(View.GONE);
         binding.unlockButton.setVisibility(View.GONE);
@@ -944,7 +960,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     // endregion
 
     private void setupScreenRotationButton() {
-        binding.lockButton.setVisibility(isFullscreen ? View.VISIBLE : View.GONE);
+        binding.lockButton.setVisibility(isFullscreen || immersiveMode
+                ? View.VISIBLE : View.GONE);
         binding.screenRotationButton.setVisibility(globalScreenOrientationLocked(context)
                 || isVerticalVideo || DeviceUtils.isTablet(context)
                 ? View.VISIBLE : View.GONE);
