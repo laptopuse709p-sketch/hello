@@ -986,6 +986,29 @@ public final class Player implements PlaybackListener, Listener {
      * @param pitch       the playback pitch, will be rounded to up to 2 decimal places
      * @param skipSilence skip silence during playback
      */
+    private PlaybackParameters holdSavedParameters;
+
+    /** Press and hold: temporary speed, never saved to the settings. */
+    public void startHoldSpeed(final float speed) {
+        if (exoPlayerIsNull() || holdSavedParameters != null) {
+            return;
+        }
+        holdSavedParameters = simpleExoPlayer.getPlaybackParameters();
+        simpleExoPlayer.setPlaybackParameters(
+                new PlaybackParameters(speed, holdSavedParameters.pitch));
+    }
+
+    /** Release: back to the speed it was before. */
+    public void endHoldSpeed() {
+        if (holdSavedParameters == null) {
+            return;
+        }
+        if (!exoPlayerIsNull()) {
+            simpleExoPlayer.setPlaybackParameters(holdSavedParameters);
+        }
+        holdSavedParameters = null;
+    }
+
     public void setPlaybackParameters(final float speed, final float pitch,
                                       final boolean skipSilence) {
         final float roundedSpeed = Math.round(speed * 100.0f) / 100.0f;

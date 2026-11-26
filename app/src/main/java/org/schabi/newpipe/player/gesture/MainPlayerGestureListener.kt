@@ -30,12 +30,28 @@ class MainPlayerGestureListener(
     private val playerUi: MainPlayerUi
 ) : BasePlayerGestureListener(playerUi), OnTouchListener {
     private var isMoving = false
+    private var holdingSpeed = false
+
+    override fun onLongPress(e: MotionEvent) {
+        // press and hold on the video: 2x until the finger is lifted
+        if (playerUi.isControlsLocked || CustomBottomSheetBehavior.zoomed) {
+            return
+        }
+        holdingSpeed = true
+        player.startHoldSpeed(2f)
+    }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         // pinch zoom and moving the zoomed picture (fullscreen and immersive view only)
         if (playerUi.handleZoomTouch(event)) {
             v.parent?.requestDisallowInterceptTouchEvent(true)
             return true
+        }
+        if (holdingSpeed &&
+            (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL)
+        ) {
+            holdingSpeed = false
+            player.endHoldSpeed()
         }
         super.onTouch(v, event)
         if (event.action == MotionEvent.ACTION_UP && isMoving) {
