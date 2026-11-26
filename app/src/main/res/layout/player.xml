@@ -21,6 +21,21 @@
         android:layout_alignBottom="@+id/surfaceView"
         android:background="@android:color/black" />
 
+    <TextView
+        android:id="@+id/holdSpeedLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="24dp"
+        android:background="#99000000"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp"
+        android:text="2x \u25B6\u25B6"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
     <com.google.android.exoplayer2.ui.SubtitleView
         android:id="@+id/subtitleView"
         android:layout_width="match_parent"

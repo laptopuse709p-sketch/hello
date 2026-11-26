@@ -39,6 +39,7 @@ class MainPlayerGestureListener(
         }
         holdingSpeed = true
         player.startHoldSpeed(2f)
+        binding.holdSpeedLabel.visibility = View.VISIBLE
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -52,6 +53,7 @@ class MainPlayerGestureListener(
         ) {
             holdingSpeed = false
             player.endHoldSpeed()
+            binding.holdSpeedLabel.visibility = View.GONE
         }
         super.onTouch(v, event)
         if (event.action == MotionEvent.ACTION_UP && isMoving) {

@@ -58,6 +58,16 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <SeekBarPreference
+        android:key="immersive_caption_offset"
+        android:defaultValue="50"
+        android:max="100"
+        android:title="@string/immersive_caption_position"
+        android:summary="@string/immersive_caption_position_summary"
+        app:iconSpaceReserved="false"
+        app:min="0"
+        app:showSeekBarValue="true" />
+
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="@string/main_tabs_position_key"

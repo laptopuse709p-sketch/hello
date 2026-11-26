@@ -2590,10 +2590,13 @@ public final class VideoDetailFragment
             subtitles.setFractionalTextSize(
                     com.google.android.exoplayer2.ui.SubtitleView.DEFAULT_TEXT_SIZE_FRACTION
                             * userScale * ratio);
+            // captions go in the space under the video; the setting moves them down (0-100)
             final float gapBelowVideo = (height - immersiveBaseHeight) / 2f / height;
-            subtitles.setBottomPaddingFraction(gapBelowVideo
-                    + com.google.android.exoplayer2.ui.SubtitleView
-                            .DEFAULT_BOTTOM_PADDING_FRACTION * ratio);
+            final int offset = androidx.preference.PreferenceManager
+                    .getDefaultSharedPreferences(requireContext())
+                    .getInt("immersive_caption_offset", 50);
+            subtitles.setBottomPaddingFraction(Math.max(0f,
+                    gapBelowVideo * (1f - offset / 100f) - 0.02f * (1f - offset / 100f)));
         });
     }
 

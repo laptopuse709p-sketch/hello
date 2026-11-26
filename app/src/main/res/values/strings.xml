@@ -931,4 +931,6 @@
     <string name="loop_off">Loop off</string>
     <string name="search_auto_retry">Nothing found. Showing results for \"%s\"</string>
     <string name="search_auto_retry_line">Showing results for %1$s. Search instead for %2$s</string>
+    <string name="immersive_caption_position">Immersive caption position</string>
+    <string name="immersive_caption_position_summary">0 = just under the video, 100 = at the bottom of the screen</string>
 </resources>
