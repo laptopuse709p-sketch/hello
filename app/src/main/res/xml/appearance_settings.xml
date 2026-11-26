@@ -58,6 +58,13 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <SwitchPreferenceCompat
+        android:key="immersive_blur"
+        android:defaultValue="true"
+        android:title="@string/immersive_blur"
+        android:summary="@string/immersive_blur_summary"
+        app:iconSpaceReserved="false" />
+
     <SeekBarPreference
         android:key="immersive_caption_offset"
         android:defaultValue="50"

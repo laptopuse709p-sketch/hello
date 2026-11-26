@@ -2533,9 +2533,15 @@ public final class VideoDetailFragment
         savedContentVisibility = binding.detailContentRootLayout.getVisibility();
         savedTabVisibility = binding.tabLayout.getVisibility();
 
-        binding.immersiveBlurBackground.setVisibility(View.VISIBLE);
+        final boolean blurOn = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(requireContext())
+                .getBoolean("immersive_blur", true);
+        binding.immersiveBlurBackground.setVisibility(blurOn ? View.VISIBLE : View.GONE);
         binding.immersiveDimOverlay.setVisibility(View.VISIBLE);
         setImmersiveBackgrounds(true);
+        if (!blurOn) {
+            return; // plain dark background, no blur to draw (saves battery)
+        }
 
         if (frameBlur == null) {
             frameBlur = new VideoFrameBlur(binding.immersiveBlurBackground,

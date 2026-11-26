@@ -933,4 +933,6 @@
     <string name="search_auto_retry_line">Showing results for %1$s. Search instead for %2$s</string>
     <string name="immersive_caption_position">Immersive caption position</string>
     <string name="immersive_caption_position_summary">0 = just under the video, 100 = at the bottom of the screen</string>
+    <string name="immersive_blur">Immersive blur background</string>
+    <string name="immersive_blur_summary">Turn off for a plain dark background and less battery use</string>
 </resources>
