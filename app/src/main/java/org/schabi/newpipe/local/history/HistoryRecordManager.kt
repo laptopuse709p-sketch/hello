@@ -48,16 +48,17 @@ class HistoryRecordManager(context: Context) {
     private val streamStateTable = database.streamStateDAO()
 
     private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val incognitoContext: Context = context.applicationContext
     private val searchHistoryKey = context.getString(R.string.enable_search_history_key)
     private val streamHistoryKey = context.getString(R.string.enable_watch_history_key)
 
     private val isSearchHistoryEnabled: Boolean
         get() = sharedPreferences.getBoolean(searchHistoryKey, false) &&
-            !org.schabi.newpipe.util.IncognitoHelper.isOn(context)
+            !org.schabi.newpipe.util.IncognitoHelper.isOn(incognitoContext)
 
     private val isStreamHistoryEnabled: Boolean
         get() = sharedPreferences.getBoolean(streamHistoryKey, false) &&
-            !org.schabi.newpipe.util.IncognitoHelper.isOn(context)
+            !org.schabi.newpipe.util.IncognitoHelper.isOn(incognitoContext)
 
     // ///////////////////////////////////////////////////////
     // Watch History
