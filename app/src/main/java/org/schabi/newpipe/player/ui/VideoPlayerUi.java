@@ -230,6 +230,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         });
         binding.loopButton.setImageAlpha(
                 player.getRepeatMode() == REPEAT_MODE_ONE ? 255 : 100);
+        binding.screenshotButton.setOnClickListener(v ->
+                org.schabi.newpipe.util.ScreenshotHelper.take(context,
+                        player.getCurrentStreamInfo().orElse(null),
+                        player.getExoPlayer() == null ? 0L
+                                : player.getExoPlayer().getCurrentPosition(),
+                        binding.surfaceView));
         binding.shuffleButton.setOnClickListener(v -> onShuffleClicked());
 
         binding.playPauseButton.setOnClickListener(makeOnClickListener(player::playPause));

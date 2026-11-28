@@ -935,4 +935,8 @@
     <string name="immersive_caption_position_summary">0 = just under the video, 100 = at the bottom of the screen</string>
     <string name="immersive_blur">Immersive blur background</string>
     <string name="immersive_blur_summary">Turn off for a plain dark background and less battery use</string>
+    <string name="screenshot">Screenshot</string>
+    <string name="screenshot_saving">Saving screenshot…</string>
+    <string name="screenshot_saved">Saved to Pictures/Pipe: %s</string>
+    <string name="screenshot_failed">Could not save the screenshot</string>
 </resources>
