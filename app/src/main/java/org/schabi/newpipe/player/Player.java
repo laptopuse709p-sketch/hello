@@ -2003,7 +2003,8 @@ public final class Player implements PlaybackListener, Listener {
 
     private void saveStreamProgressState(final long progressMillis) {
         getCurrentStreamInfo().ifPresent(info -> {
-            if (!prefs.getBoolean(context.getString(R.string.enable_watch_history_key), true)) {
+            if (!prefs.getBoolean(context.getString(R.string.enable_watch_history_key), true)
+                    || org.schabi.newpipe.util.IncognitoHelper.isOn(context)) {
                 return;
             }
             if (DEBUG) {

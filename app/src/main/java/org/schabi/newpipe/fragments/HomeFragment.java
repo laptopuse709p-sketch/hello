@@ -23,6 +23,7 @@ import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.fragments.list.topic.TopicFragment;
+import org.schabi.newpipe.util.IncognitoHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.NotInterestedHelper;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -235,6 +236,10 @@ public class HomeFragment extends BaseFragment {
                                     @NonNull final MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.menu_main_fragment, menu);
+        final MenuItem incognito = menu.findItem(R.id.action_incognito);
+        if (incognito != null) {
+            incognito.setVisible(IncognitoHelper.isOn(requireContext()));
+        }
 
         final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null) {
@@ -251,6 +256,13 @@ public class HomeFragment extends BaseFragment {
             } catch (final Exception e) {
                 ErrorUtil.showUiErrorSnackbar(this, "Opening search fragment", e);
             }
+            return true;
+        }
+        if (item.getItemId() == R.id.action_incognito) {
+            IncognitoHelper.toggle(requireContext()); // tapping the icon turns it off
+            Toast.makeText(requireContext(), R.string.incognito_disabled_msg,
+                    Toast.LENGTH_SHORT).show();
+            activity.invalidateOptionsMenu();
             return true;
         }
         if (item.getItemId() == R.id.action_reset_not_interested) {

@@ -52,10 +52,12 @@ class HistoryRecordManager(context: Context) {
     private val streamHistoryKey = context.getString(R.string.enable_watch_history_key)
 
     private val isSearchHistoryEnabled: Boolean
-        get() = sharedPreferences.getBoolean(searchHistoryKey, false)
+        get() = sharedPreferences.getBoolean(searchHistoryKey, false) &&
+            !org.schabi.newpipe.util.IncognitoHelper.isOn(context)
 
     private val isStreamHistoryEnabled: Boolean
-        get() = sharedPreferences.getBoolean(streamHistoryKey, false)
+        get() = sharedPreferences.getBoolean(streamHistoryKey, false) &&
+            !org.schabi.newpipe.util.IncognitoHelper.isOn(context)
 
     // ///////////////////////////////////////////////////////
     // Watch History

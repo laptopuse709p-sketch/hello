@@ -87,6 +87,7 @@ import org.schabi.newpipe.settings.migration.MigrationManager;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.Localization;
+import org.schabi.newpipe.util.IncognitoHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PeertubeHelper;
 import org.schabi.newpipe.util.PermissionHelper;
@@ -125,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_BOOKMARKS = -3;
     private static final int ITEM_ID_DOWNLOADS = -4;
     private static final int ITEM_ID_HISTORY = -5;
+    private static final int ITEM_ID_INCOGNITO = -6;
     private static final int ITEM_ID_SETTINGS = 0;
     private static final int ITEM_ID_DONATION = 1;
     private static final int ITEM_ID_ABOUT = 2;
@@ -294,6 +296,10 @@ public class MainActivity extends AppCompatActivity {
         drawerLayoutBinding.navigation.getMenu()
                 .add(R.id.menu_tabs_group, ITEM_ID_HISTORY, ORDER, R.string.action_history)
                 .setIcon(R.drawable.ic_history);
+        drawerLayoutBinding.navigation.getMenu()
+                .add(R.id.menu_tabs_group, ITEM_ID_INCOGNITO, ORDER,
+                        IncognitoHelper.isOn(this) ? R.string.incognito_on : R.string.incognito_off)
+                .setIcon(R.drawable.ic_incognito);
 
         //Settings and About
         drawerLayoutBinding.navigation.getMenu()
@@ -330,6 +336,18 @@ public class MainActivity extends AppCompatActivity {
      * Home button: from another page, go back to the same Home feed (no refresh);
      * on Home itself, scroll to the top, or refresh when already at the top.
      */
+    private void toggleIncognito() {
+        final boolean on = IncognitoHelper.toggle(this);
+        final MenuItem item = drawerLayoutBinding.navigation.getMenu().findItem(ITEM_ID_INCOGNITO);
+        if (item != null) {
+            item.setTitle(on ? R.string.incognito_on : R.string.incognito_off);
+        }
+        android.widget.Toast.makeText(this,
+                on ? R.string.incognito_enabled_msg : R.string.incognito_disabled_msg,
+                android.widget.Toast.LENGTH_SHORT).show();
+        invalidateOptionsMenu();
+    }
+
     private void onHomeButtonTapped() {
         final Fragment current = getSupportFragmentManager()
                 .findFragmentById(R.id.fragment_holder);
@@ -388,6 +406,9 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case ITEM_ID_HISTORY:
                 NavigationHelper.openStatisticFragment(getSupportFragmentManager());
+                break;
+            case ITEM_ID_INCOGNITO:
+                toggleIncognito();
                 break;
         }
     }

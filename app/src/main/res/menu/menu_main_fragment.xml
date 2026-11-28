@@ -10,6 +10,14 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_incognito"
+        android:icon="@drawable/ic_incognito"
+        android:orderInCategory="0"
+        android:title="@string/incognito_on"
+        android:visible="false"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_reset_not_interested"
         android:orderInCategory="2"
         android:title="@string/reset_not_interested"

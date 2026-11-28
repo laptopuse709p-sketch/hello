@@ -939,4 +939,8 @@
     <string name="screenshot_saving">Saving screenshot…</string>
     <string name="screenshot_saved">Saved to Pictures/Pipe: %s</string>
     <string name="screenshot_failed">Could not save the screenshot</string>
+    <string name="incognito_on">Incognito: On</string>
+    <string name="incognito_off">Incognito: Off</string>
+    <string name="incognito_enabled_msg">Incognito on: history and searches are not saved</string>
+    <string name="incognito_disabled_msg">Incognito off</string>
 </resources>
